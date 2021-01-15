@@ -6,14 +6,12 @@
 
 include_once 'strawberry/head.php';
 
-// убирает форму
 add_filter('allow-comment-form', 'comment_form');
 
 function comment_form(){
 	return false;
 }
 
-// запрещаем менять шаблон кроме как через переменную $template
 add_filter('unset-template', 'unset_template');
 
 function unset_template($files){
@@ -41,8 +39,8 @@ xmlns:dc="http://purl.org/dc/elements/1.1/">
 
 <?php
 $config['cnumber'] = 0;
-$number   = $number ? $number : 12;
-$template = $template ? $template : 'RSS';
+$number   =  12;
+$template = 'RSS';
 include rootpath.'/show_news.php';
 ?>
 </channel>
