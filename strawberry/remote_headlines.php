@@ -5,27 +5,25 @@
  */
 
 /*
-Как использовать этот модуль.
-Втсавьте этот код:
+РљР°Рє РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЌС‚РѕС‚ РјРѕРґСѓР»СЊ.
+Р’С‚СЃР°РІСЊС‚Рµ СЌС‚РѕС‚ РєРѕРґ:
 <script language="javascript" src="http://example.com/path/to/remote_headlines.php"></script>
-Можно использовать разное кол-во новостей:
+РњРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЂР°Р·РЅРѕРµ РєРѕР»-РІРѕ РЅРѕРІРѕСЃС‚РµР№:
 http://example.com/path/to/remote_headlines.php?number=NUMBER_OF_NEWS
-Можно использовать и категории:
+РњРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Рё РєР°С‚РµРіРѕСЂРёРё:
 http://example.com/path/to/remote_headlines.php?number=NUMBER_OF_NEWS&category=CAT_ID
-Шаблон для мода по умолчанию remote_headlines
+РЁР°Р±Р»РѕРЅ РґР»СЏ РјРѕРґР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ remote_headlines
 */
-
 
 include_once 'head.php';
 
 add_filter('news-where', 'hidden_news');
 
-function hidden_news($where){
-
+function hidden_news($where)
+{
 	$where[] = 'hidden = 0';
 	$where[] = 'and';
-
-return $where;
+	return $where;
 }
 
 $template = 'remote_headlines';
