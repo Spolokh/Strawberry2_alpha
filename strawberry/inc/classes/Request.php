@@ -17,7 +17,8 @@ class Request
      * getHttpGet(), 
      * getHttpReq(), 
      * getHttpFiles(), 
-     * getHttpCookie()
+     * getHttpCookie(),
+     * getHttpUri(), 
      *
      * @var    - string
      * @access - private
@@ -140,7 +141,7 @@ class Request
     
     public function toString()
     {
-        return $this->data ? filter_var($this->data, FILTER_SANITIZE_STRING): NULL;
+        return $this->data? filter_var($this->data, FILTER_SANITIZE_STRING): NULL;
     }
 
     /*
