@@ -8,7 +8,7 @@ $action = $_POST['action'] ?? NULL;
 use classes\Upload;
 use classes\Template;
 
-if ($action and $action == 'editprofile')
+if (isset($action) and $action == 'editprofile')
 {
 	if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
 		exit(t('Извините, этот e-mail неправильный.'));
@@ -28,11 +28,11 @@ if ($action and $action == 'editprofile')
 			$_SESSION['password'] = $row['password'];
 			cute_setcookie('password', $row['password']);
 		}
-    }
+    	}
 	
 	if(($added_time = strtotime($day.' '.$month.' '.$year)) == -1) {
 		$added_time = time;
-    }
+    	}
 
 	$ljpassword   = $ljpassword ? : $member['lj_password'];
 	$upload_image = false;
@@ -96,13 +96,13 @@ if ($action and $action == 'editprofile')
 $template = templates_directory . '/Users/';
 $template = (new Template($template))->open('editprofile', $module);
 $template->set('name', $member['name'], $module)
-		->set('mail', $member['mail'], $module)
-		->set('age', date_AddRows($member['age']), $module)
-		->set('username', $member['username'], $module)
-		->set('about', htmlspecialchars(str_replace("<br/>", NL, $member['about'])), $module)
-		->set('ljusername', $member['lj_username'], $module)
-		->set('ljpassword', $member['lj_password'], $module)
-	;
+	->set('mail', $member['mail'], $module)
+	->set('age', date_AddRows($member['age']), $module)
+	->set('username', $member['username'], $module)
+	->set('about', htmlspecialchars(str_replace("<br/>", NL, $member['about'])), $module)
+	->set('ljusername', $member['lj_username'], $module)
+	->set('ljpassword', $member['lj_password'], $module)
+;
 
 if (isset($member['contacts']) AND CN::isJson($member['contacts']))
 {
