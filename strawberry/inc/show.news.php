@@ -11,13 +11,11 @@ if ($allow_full_story){
    
 } else {
 
-    //timePeriod();
-
     $where = [];
     $where = run_filters('news-where', $where);
 
     if (!cute_get_rights('edit_all') or !cute_get_rights('delete_all')) {
-        $where[] = 'hidden = 0';
+        	$where[] = 'hidden = 0';
 		$where[] = 'and';
     }
 
@@ -28,28 +26,25 @@ if ($allow_full_story){
 
     if (isset($year) and !$month)
     {
-	    $where[] = 'date > '.mktime(0, 0, 0, 1, 1, $year);
-	    $where[] = 'and';
-        $where[] = 'date < '.mktime(23, 59, 59, 12, 31, $year);
+	$where[] = 'date > '.mktime(0, 0, 0, 1, 1, $year);
+	$where[] = 'and';
+	$where[] = 'date < '.mktime(23, 59, 59, 12, 31, $year);
         
     } elseif (isset($year) and isset($month) and !$day)
     {
-	    $where[] = 'date > '.mktime(0, 0, 0, $month, 1, $year);
-	    $where[] = 'and';
+	$where[] = 'date > '.mktime(0, 0, 0, $month, 1, $year);
+	$where[] = 'and';
         $where[] = 'date < '.mktime(23, 59, 59, $month, 31, $year);
         
     } elseif (isset($year) and isset($month) and $day)
     {
-	    $where[] = 'date > '.mktime(0, 0, 0, $month, $day, $year);
-	    $where[] = 'and';
+	$where[] = 'date > '.mktime(0, 0, 0, $month, $day, $year);
+	$where[] = 'and';
         $where[] = 'date < '.mktime(23, 59, 59, $month, $day, $year);
         
-    } else 
-    {
-        //$where[] = 'date < '.strtotime('1 week + 2 day'); // + 1 week + 3 day
-        $where[] =  'date < '.time; //timePeriod();  //week  //month //year
-        //$where[] = 'and';
-        //$where[] = 'date > '.strtotime('now');
+    } else {
+		
+        $where[] =  'date < '.time;
     }
 
     if (!empty($category)) {
@@ -60,14 +55,14 @@ if ($allow_full_story){
 	    	$where[] = 'category = )';
 		} else {
 	    	$where[] = 'and';
-            $where[] = 'category ? ['.str_replace([',', '0|', '|0'], ['|', '', ''], $category).']';
+            	$where[] = 'category ? ['.str_replace([',', '0|', '|0'], ['|', '', ''], $category).']';
 		}
 	}
 
 	$query = $sql->select(['news',
 		'select'  => ['date', 'author', 'title', 'image', 'category', 'url', 'views', 'comments', 'tags', 'id', 'type', 'short', 'votes'],
-        'join'    => ['story', 'id'], 
-        'where'   => $where,
+		'join'    => ['story', 'id'], 
+		'where'   => $where,
 		'orderby' => [['sticky', 'DESC'], $sort],
 		'limit'   => [($skip ?? 0), $number]
 	]);
@@ -77,9 +72,9 @@ if ( empty($query) ) {
 	
     if ($allow_full_story)
     {    
-		$allow_comment_form = false;
-		$allow_comments = false;	
-		header('HTTP/1.1 404 Not Found');
+	$allow_comment_form = false;
+	$allow_comments = false;	
+	header('HTTP/1.1 404 Not Found');
         exit;		
 	}
 }
@@ -90,8 +85,7 @@ $users = $sql->UsersByPostIDs($query);
 foreach ($query as $row){
 
 	$tpl['post']      = $row;
-    $tpl['post']['_'] = $row;
-    //echo date('T', $row['date']);
+	$tpl['post']['_'] = $row;
 
     if (!in_array(basename($PHP_SELF), run_filters('unset-template', [])) and empty($static) and ($categories[$category]['template'] or $categories[$row['category']]['template'])){
         
@@ -173,69 +167,68 @@ foreach ($query as $row){
         }
     } //Ruben-Ulises Fabian-Sanchez
 
-    $tpl['post']['description'] = isset($row['description']) ? run_filters('news-entry-content', $row['description']) : run_filters('news-entry-content', $row['title']);
-    $tpl['post']['avatar']      = $users[$row['author']]['avatar'] ? $config['path_userpic_upload'].'/'.$row['author'].'.'.$users[$row['author']]['avatar'] : '';
-  
+	$tpl['post']['description'] = isset($row['description']) ? run_filters('news-entry-content', $row['description']) : run_filters('news-entry-content', $row['title']);
+	$tpl['post']['avatar']      = $users[$row['author']]['avatar'] ? $config['path_userpic_upload'].'/'.$row['author'].'.'.$users[$row['author']]['avatar'] : '';
 	$tpl['post']['image']       = $row['image'] ? $config['path_image_upload'].'/posts/'.$row['image'] : '';
-    $tpl['post']['icon']        = $row['image'] ? $config['path_image_upload'].(file_exists(UPLOADS.'/thumbs/'.$row['image']) ? '/thumbs/' : '/').$row['image'] : '';
+	$tpl['post']['icon']        = $row['image'] ? $config['path_image_upload'].(file_exists(UPLOADS.'/thumbs/'.$row['image']) ? '/thumbs/' : '/').$row['image'] : '';
     //$tpl['post']['lj-username'] = '<a href="http://'.$users[$row['author']]['lj_username'].'.livejournal.com/profile"><img src="'.$config['http_script_dir'].'/skins/images/user.gif" alt="[info]" align="absmiddle" border="0"></a><a href="http://'.$users[$row['author']]['lj_username'].'.livejournal.com">'.$users[$row['author']]['lj_username'].'</a>';
 
-    $tpl['post']['attach'] = videoAttachment($post['id']);
-    $tpl['post']['votes'] = $row['votes'] > 0 ? (int) $row['votes'] : '';	
+	$tpl['post']['attach'] = videoAttachment($post['id']);
+	$tpl['post']['votes'] = $row['votes'] > 0 ? (int) $row['votes'] : '';	
 	$tpl['post']['title'] = run_filters('news-entry-content', $row['title']);
     
     
-    $tpl['post']['date'] = defined('CUTEDATE') ? cuteDate($row) : 
-    langdate($config['timestamp_active'], $row['date']);
+	$tpl['post']['date'] = defined('CUTEDATE') ? cuteDate($row) : 
+	langdate($config['timestamp_active'], $row['date']);
     
-    $tpl['post']['category'] = [
-        'id'   => join(', ', $cat['id']), 
-        'url'  => join(', ', $cat['url']), 
-        'icon' => join(', ', $cat['icon']),
-        'name' => join(', ', $cat['name']),
-        'desc' => join(', ', $cat['desc'])
-    ];
+	$tpl['post']['category'] = [
+		'id'   => join(', ', $cat['id']), 
+		'url'  => join(', ', $cat['url']), 
+		'icon' => join(', ', $cat['icon']),
+		'name' => join(', ', $cat['name']),
+		'desc' => join(', ', $cat['desc'])
+	];
 
-    $tpl['post']['usergroup'] = $users[$row['author']]['usergroup'];
-    $tpl['post']['username'] = $users[$row['author']]['username'];
-    $tpl['post']['author']   = $users[$row['author']]['name'];
-    $tpl['post']['user-id']  = $users[$row['author']]['id'];
-    $tpl['post']['user']     = [
-        'profile' => cute_get_link($users[$row['author']], 'user'),
-        'publish' => cute_get_link($users[$row['author']], 'author'),
-    ];
+	$tpl['post']['usergroup'] = $users[$row['author']]['usergroup'];
+	$tpl['post']['username'] = $users[$row['author']]['username'];
+	$tpl['post']['author']   = $users[$row['author']]['name'];
+	$tpl['post']['user-id']  = $users[$row['author']]['id'];
+	$tpl['post']['user']     = [
+		'profile' => cute_get_link($users[$row['author']], 'user'),
+		'publish' => cute_get_link($users[$row['author']], 'author'),
+	];
 
-    $tpl['post']['alternating'] = cute_that('cn_news_odd', 'cn_news_even');
-    $tpl['post']['short-story'] = run_filters('news-entry-content', $row['short']);
-    $tpl['post']['full-story']  = run_filters('news-entry-content', $row['full']);
-    $tpl['post']['pages']       = join(' ', $pages);
-    $tpl['post']                = run_filters('news-show-generic', $tpl['post']);
+	$tpl['post']['alternating'] = cute_that('cn_news_odd', 'cn_news_even');
+	$tpl['post']['short-story'] = run_filters('news-entry-content', $row['short']);
+	$tpl['post']['full-story']  = run_filters('news-entry-content', $row['full']);
+	$tpl['post']['pages']       = join(' ', $pages);
+	$tpl['post']                = run_filters('news-show-generic', $tpl['post']);
 
-    ob_start();
-    include templates_directory.DS.$tpl['template'].DS.($allow_full_story ? 'full' : 'active').'.tpl';
-    $output = ob_get_clean();
-    $output = run_filters('news-entry', $output);
-    $output = replace_news('show', $output);
+	ob_start();
+	include templates_directory.DS.$tpl['template'].DS.($allow_full_story ? 'full' : 'active').'.tpl';
+	$output = ob_get_clean();
+	$output = run_filters('news-entry', $output);
+	$output = replace_news('show', $output);
 
-    $output = str_replace('$[post:title]',  $row['title'], $output);
-    $output = str_replace('$[config:email]', $config['site_mail'], $output);
-    $output = str_replace('$[config:phone]', $config['site_phone'], $output);
+	$output = str_replace('$[post:title]',  $row['title'], $output);
+	$output = str_replace('$[config:email]', $config['site_mail'], $output);
+	$output = str_replace('$[config:phone]', $config['site_phone'], $output);
 
-    $output = preg_replace_callback('/\$\[funct:post\((.*?)\)\]/is', function($m) use ($config) {
-        return isset($post['id']) ? (new classes\Post($config))->show($m[1]) : false;
-    }, $output);
-   
-    echo $output;
+	$output = preg_replace_callback('/\$\[funct:post\((.*?)\)\]/is', function($m) use ($config) {
+		return isset($post['id']) ? (new classes\Post($config))->show($m[1]) : false;
+	}, $output);
 
-    if (isset($post['id']) and isset($post['views']) and empty($page) and $allow_full_story !== false) 
-    {
-        if ( !isset($_SESSION['post'][$post['id']]) )
-        {
-            $_SESSION['post'] = [];
-            $_SESSION['post'][$post['id']] = $post['views'] + 1;
-            $sql->update(['news', 'where' => $post['id'], 'values' => ['views' => $_SESSION['post'][$post['id']]]]);
-        }
-    }
+    	echo $output;
+
+    	if (isset($post['id']) and isset($post['views']) and empty($page) and $allow_full_story !== false) 
+    	{
+        	if ( !isset($_SESSION['post'][$post['id']]) )
+        	{
+		    $_SESSION['post'] = [];
+		    $_SESSION['post'][$post['id']] = $post['views'] + 1;
+		    $sql->update(['news', 'where' => $post['id'], 'values' => ['views' => $_SESSION['post'][$post['id']]]]);
+        	}
+ 	}
 }
 
 // << Previous & Next >>
@@ -258,8 +251,8 @@ if ($number){
 	$pages_skip    = 0;
 	$pages         = [];
 	$pages_section = (int) $config['pages_section'];
-    $pages_break   = (int) $config['pages_break'];
-    $pages_count   = ceil($count / $number);
+	$pages_break   = (int) $config['pages_break'];
+	$pages_count   = ceil($count / $number);
 
     if ($pages_break and $pages_count > $pages_break){
         for ($j = 1; $j <= $pages_section; $j++){
@@ -335,5 +328,5 @@ if ($skip + $number < $count){
 if (!empty($tpl['prev-next']['prev']) or !empty($tpl['prev-next']['next'])) {
 	ob_start();
 	include templates_directory.'/'.$tpl['template'].'/prev_next.tpl';
-    $pagenation = ob_get_contents();
+    	$pagenation = ob_get_contents();
 }
