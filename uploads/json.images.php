@@ -14,24 +14,29 @@ if ( !($member || $is_logged_in) ) {
 $where = [];
 
 if ( !$query = $sql->select(['attach', 'select' => ['thumb', 'file', 'title', 'folder'], 'where' => $where]) ) {
-	exit ();
+	exit;
 }
 	
 foreach ($query as $k => $row)
 {
-    if ( empty($row['file']) AND !file_exists (UPLOADS .'/posts/'. $row['file']) ) {
+    	if ( empty($row['file']) AND !file_exists (UPLOADS .'/posts/'. $row['file']) )
+	{
 		continue;
 	}
-	if ( empty($row['thumb']) ) {
+	if ( empty($row['thumb']) )
+	{
 		$row['thumb']  = $row['file'];
 	}
-	if ( empty($row['folder']) ) {
+	if ( empty($row['folder']) )
+	{
 		$row['folder'] = 'Post';
 	}
-	if ( strpos ($row['file'], '/uploads/') === FALSE ) {
+	if ( strpos ($row['file'], '/uploads/') === FALSE )
+	{
 		$row['file'] = '/uploads/posts/'.$row['file'];
 	}
-	if ( strpos ($row['thumb'], "/uploads/thumb.php") === FALSE ) {
+	if ( strpos ($row['thumb'], "/uploads/thumb.php") === FALSE )
+	{
 		$row['thumb'] = '/uploads/thumb.php?src=/uploads/posts/'.$row['thumb'].'&w=100&h=70';
 	}
 	$json[] = $row;
