@@ -1,0 +1,8 @@
+# запрещает показ списка файлов
+Options -Indexes
+# разрешаем доступ
+<Files ~ "(thumb.php|json.images.php|\.jpg|\.jpeg|\.gif|\.png)">
+    Allow from all
+</Files>
+# запрещаем доступ ко всему отовсюду
+Deny from all
