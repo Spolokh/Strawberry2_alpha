@@ -31,7 +31,7 @@ foreach ($timezone_identifiers as $v){
 
 
 $config['database']= strtolower($_POST['database']);
-$config['language']= $_POST['lang'];
+$config['language']= $_POST['language'];
 $config['charset'] = $_POST['charset'];
 $config['dbname']  = $_POST['dbname'];
 $config['dbuser']  = $_POST['dbuser'];
@@ -61,7 +61,7 @@ echoheader('options', t('Инсталяция Strawberry'));
 
 	<tr>
 		<td><?=t('Язык'); ?>
-		<td><?=makeDropDown( $sys_con_lang_arr, 'lang', 'ru' )?>
+		<td><?=makeDropDown( $sys_con_lang_arr, 'language', 'ru' )?>
 	<tr>
 		<td><?=t('Временная зона'); ?>
 		<td><?=makeDropDown( $dateTimeZone, 'timezone', 'Europe/Moscow' )?>
@@ -110,16 +110,16 @@ echoheader('options', t('Инсталяция Strawberry'));
 	<td><input name="dbuser" type="text" <?=$disabled; ?>>
  <tr>
 	<td><?=t('Пароль'); ?>
-	<td><input name="dbpassword" type="text" <?=$disabled; ?>>
+	<td><input name="dbpass" type="text" <?=$disabled; ?>>
  <tr>
 	<td><?=t('Сервер базы данных'); ?>
-	<td><input name="dbserver" type="text" value="localhost"<?=$disabled; ?>>
+	<td><input name="dbhost" type="text" value="localhost"<?=$disabled; ?>>
  <tr>
 	<td><?=t('Имя базы'); ?>
 	<td><input name="dbname" type="text" value=""<?=$disabled; ?>>
  <tr>
 	<td><?=t('Префикс таблиц'); ?>
-	<td><input name="dbprefix" type="text" value="cute_"<?=$disabled; ?>>
+	<td><input name="prefix" type="text" value="cute_"<?=$disabled; ?>>
 
 <?php
 } elseif ($step == 4){
