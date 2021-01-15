@@ -50,11 +50,6 @@ final class ModalForm extends CuteParser
             exit;
         }
 
-        //if ($this->method != 'POST')
-        //{
-        //    exit;
-        //}
-
         foreach ($_POST as $k => $v)
         {
             $$k = trim($v);
@@ -72,12 +67,12 @@ final class ModalForm extends CuteParser
     
         if (reset($this->errors))
         {
-			foreach ($this->errors as $k => $v) {
-				printf ('<li>%s.</li>', $v);
-			}
+		foreach ($this->errors as $k => $v) {
+			printf ('<li>%s.</li>', $v);
+		}
 	
-			header("HTTP/1.1 500 Internal Server Error");
-            exit;
+		header("HTTP/1.1 500 Internal Server Error");
+		exit;
         }
 
         $name    = filter_var($name, FILTER_SANITIZE_STRING);
@@ -100,7 +95,7 @@ final class ModalForm extends CuteParser
                 exit("Ваше сообщение отправленно!");
             }
              
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logWrite('Ошибка: ' . $e->getMessage());
         }
     }
@@ -127,12 +122,7 @@ final class ModalForm extends CuteParser
             return;
         }
 
-        $output = date('d.m.Y H:i:s') . PHP_EOL . $message . PHP_EOL . '-------------------------' . PHP_EOL;
+        $output = date('d.m.Y H:i:s') .PHP_EOL. $message .PHP_EOL. '-------------------------' .PHP_EOL;
         file_put_contents(rootpath . '/logs.txt', $output, FILE_APPEND | LOCK_EX);
     }
-
-    //public function __toString ()
-    //{
-        //return $this->run();
-    //}
 }
