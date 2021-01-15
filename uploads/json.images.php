@@ -7,8 +7,7 @@
 include_once dirname(__DIR__) .'/strawberry/head.php';
 
 if ( !($member || $is_logged_in) ) {
-	//return $cute->msg('Achtung!', t('Необходима авторизация на сайте'));	
-	exit (t('Необходима авторизация на сайте'));
+	exit;
 }
 
 $where = [];
