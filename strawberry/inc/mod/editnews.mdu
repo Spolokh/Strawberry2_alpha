@@ -1,0 +1,905 @@
+<?php
+
+// ********************************************************************************
+// List all news available for editing
+// ********************************************************************************
+
+if ( empty($id) and empty($action) ) {
+
+	$order = $order ?? 'DESC';
+	$by    = $by    ?? 'date';
+
+	if (cute_get_rights('edit') && !cute_get_rights('edit_all')){
+		$author = $member['username'];
+	}
+
+	$where  = [];
+	$number = $number?: 21;
+
+	if (!cute_get_rights('edit') && !cute_get_rights('edit_all')){
+		$where[] = 'id = 0';
+	} else {
+		$where[] = 'id > 0';
+	}
+
+	if ( isset($not_published) ){
+		$where[] = 'and';
+		$where[] = 'hidden = 1';
+	}
+
+	if ( isset($author) ){
+		$where[] = 'and';
+		$where[] = 'author = '.$author;
+	}
+
+	if ( isset($category) and $category != '' and $category != 0 ){
+		$where[] = 'and';
+		$where[] = 'category ? ['.str_replace(',', '|', $category).']';
+	}
+	
+	if ( isset($search) ) {
+	
+		$search = strtolower($search);
+		$search = htmlspecialchars($search);
+		$search = addcslashes($search, '%_');
+		
+		$where[] = 'and';
+		$where[] = "title =~ %$search%";
+	}
+
+	$query = $sql->select(['news', 'select' => ['id', 'date', 'title', 'category', 'comments', 'views', 'hidden', 'type', 'author'], 'where' => $where, 'orderby' => [$by, $order], 'limit' => [(isset($skip) ? (int)$skip : 0), $number]]);
+	$count = $sql->count(['news', 'where'  => $where]);
+	$users = $sql->UsersByPostIDs($query);
+
+	$order = ($order == 'ASC') ? 'DESC' : 'ASC';
+	$sort  = ' <i class="icon-'.$order.'"></i>';
+
+    echoheader ('editnews', t('Редактировать записи'));
+
+	foreach ($query as $row){
+		
+		$cat_arr = [];
+	    
+		foreach (explode(',', $row['category']) as $cat){
+	        if (!empty($cat)){
+
+	            if ( empty($categories[$cat]['id']) ){
+	                $cat_arr[] = '<font color="red">'.t('ID <b>ошибка</b>').'</font>';
+	            } else {
+                    $cat_arr[] = '<a href="?mod=editnews&category='.$categories[$cat]['id'].'">'.$categories[$cat]['name'].'</a>';
+	            }
+	        } else {
+	            $cat_arr[] = 'no category';
+	        }
+	    }
+              
+		$list[] = [ ///<img src="skins/images/'.($row['hidden'] ? 'del.png' : 'ok.png').'"> 
+			'<div align="center">' .$row['id']. '</div>',
+			'<div>' .date('d.m.Y', $row['date']).'</div>',
+			'<nobr><a href="'.$PHP_SELF.'?mod=editnews&id='.$row['id'].'">'.replace_news('show', (strlen(strip_tags($row['title'])) > 50 ? mb_substr($row['title'], 0, 50).'...' : $row['title'])).'</a></nobr>',
+			'<div align="center">'.$row['comments'].'</div>',
+			'<div align="center">'.$row['views'].'</div>',
+			'<div align="center"><a class="'.($row['hidden'] ? 'red icon-remove' : 'green icon-ok').'" title="'.($row['hidden']? t('Открыть запись'): t('Скрыть запись')).'" href="#" onclick="doAjaxItem({action:\'hide_post\', id: '.$row['id'].', hidden: '.$row['hidden'].'}, this); return false;"></a></div>',    
+			$row['type']!= '' ? $config['post_types'][$row['type']] : 'Пост', 
+			join(', ', $cat_arr),
+			'<a href="?mod=editnews&author='.$users[$row['author']]['username'].'">'.$users[$row['author']]['name'].'</a>',
+			'<label class="option"><input type="checkbox" name="selected_news[]" value="'.$row['id'].'"><span class="checkbox"></span></label>'
+		];
+	}
+
+	if ($list){
+		
+	    $list = array_merge([
+	            '<div align="center"><b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=id">#'.($by == 'id' ? $sort : '').'</a></b></div>',
+	            '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=date">'.t('Дата').($by == 'date' ? $sort : '').'</a></b>',
+	            '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=title">'.t('Заголовок записи').($by == 'title' ? $sort : '').'</a></b>',
+	            '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=comments">'.t('Ком.').($by == 'comments' ? $sort : '').'</a></b>',
+	            '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=views">'.t('Прос.').($by == 'views' ? $sort : '').'</a></b>',
+	            '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=hidden">'.t('Стат.').($by == 'hidden' ? $sort : '').'</a></b>',
+                '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=type">'.t('Тип').($by == 'hidden' ? $sort : '').'</a></b>',
+	            '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=category">'.t('Категория').($by == 'category' ? $sort : '').'</a></b>',
+	            '<b><a href="'.$PHP_SELF.'?mod=editnews&order='.$order.'&by=author">'.t('Автор').($by == 'author' ? $sort : '').'</a></b>',
+				'<div align="center">
+				<label class="option"><input type="checkbox" name="master_box" title="'.t('Выбрать все').'" onclick="javascript:ckeck_uncheck_all(\'editnews\')"><span class="checkbox"></span></label>'
+			], $list
+		);
+	}
+
+if ($list){ ?>
+
+<form id="SearchForm" method="get">
+    <input type="hidden" name="mod" value="<?=$mod?>" />
+	<input type="hidden" id="catid" value="0" />
+	<input type="search" name="search" id="searchField" value="<?=(isset($search) ? $search : '')?>" placeholder="Найти"/>
+	<div id="autocomplete" class="autocomplete"></div>
+	<a class="icon icon-caret-down" onClick="Effect.toggle('search-more', 'blind', {duration: 0.5});"></a>
+	
+	<ul class="search-more" id="search-more" style="display:none">
+		<li data="0"><?=t('Все категории') ?></li>
+	<?php foreach ( $categories as $cat ) {  
+		if (empty($cat['parent']) and empty($cat['hidden'])) { ?>
+			<li data="<?=$cat['id']?>"><?=$cat['name']?></li>
+	<?php }
+	} ?>
+	</ul>
+</form>
+
+<form method="post" name="editnews">
+<table id="<?=$mod; ?>">
+<?=makeList($list); ?>
+</table>
+<?php if(cute_get_rights('edit_all') or cute_get_rights('delete_all')){ ?>
+<div style="float:right">
+<?=makeDropDown(['' => t('- Действие -'), 'delete' => t('Удалить'), 'movetocat' => t('Изменить категорию'), 'publish' => t('Опубликовать'), 'movetotype' => t('Изменить тип поста')], 'action'); ?>
+<input type="hidden" name="mod" value="editnews">
+<input type="submit" value=" <?=t('OK'); ?> ">
+</div>
+</form>
+<?php } ?>
+<div class="pagination pagination-centered">
+	<ul>
+		<?=$cute->pagination($count, $number, $skip); ?>
+	</ul>
+</div>
+
+<script type="text/javascript"> 
+<!--
+$(document).observe("dom:loaded", function(){
+	$(document).on('click', '.search-more li', function(e, a) {
+		var catid = a.readAttribute('data');
+		$("search-more").hide();
+		$("searchField").placeholder = '';
+		$("searchField").focus();
+   
+		$('catid').setValue(catid).setAttribute('name', 'category');
+	});
+	new Ajax.Autocompleter('searchField', 'autocomplete', '/ajax/ajax.search.php', { //document.domain +
+		minChars: 2, paramName: 'search' //indicator: 'indicator', parameters: $H({region: 'region'}).toQueryString(), 			  
+	});
+});
+-->
+</script>
+
+<? } else { ?>
+<div align="center"><?=t('- Записей нет -'); ?></div>
+<?php } echofooter();
+}
+
+$moved_news = 0;
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Mass Delete
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if ($action == 'delete') {
+
+	if (empty($selected_news)) {
+	    msg('error', t('Ошибка'), t('Не выбрано новостей для удаления.'), $PHP_SELF.'?mod=editnews');
+	}   
+	echoheader('options', t('Удаление новостей'));
+?>
+
+<form method="post" action="<?=$PHP_SELF; ?>">
+<table>
+	<tr>
+	<td><?=t('Уверены, что хотите удалить выбранные(<b>%selected</b>) записи?', ['selected' => count($selected_news)]); ?>
+		<br /><br />
+		<input type="button" value="   <?=t('Нет'); ?>   " onclick="javascript:document.location='<?=$PHP_SELF; ?>?mod=editnews'"> &nbsp; 
+		<input type="submit" value="   <?=t('Да'); ?>   ">
+		<input type="hidden" name="action" value="dodelete"/>
+		<input type="hidden" name="mod" value="editnews"/>
+<?php foreach ($selected_news as $newsid){ ?>
+		<input type="hidden" name="selected_news[]" value="<?=$newsid; ?>">
+<?php } ?>
+
+</table>
+</form>
+
+<?php echofooter();
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Do Mass Delete
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if ($action == 'dodelete'){
+
+	if (empty($selected_news)) {
+	    msg('error', t('Ошибка'), t('Не выбрано записи для удаления.'), $PHP_SELF.'?mod=editnews');
+	}
+
+    $righ_have = (!cute_get_rights('approve_news') and cute_get_rights('edit_all')) ? true : false;
+	
+	$righ_have or exit (t('Действие запрещено'));
+
+    run_actions('mass-deleted');
+	
+    $query = $sql->select(['news', 'select' => ['id'], 'where' => ['id = ['.join(',', $selected_news).']']]);
+	
+    foreach ($query as $row){
+        
+		$sql->delete(['news', 'where'  => $row['id']]);
+		$sql->delete(['story', 'where' => $row['id']]);
+		$sql->delete(['comments', 'where' => ["post_id = $row[id]"]]);
+		
+		if( file_exists(UPLOADS.'/posts/'.$row['image']) or file_exists(UPLOADS.'/posts/thumbs/'.$row['image']) ){
+			unlink(UPLOADS.'/posts/'.$row['image']);
+		}
+		$moved_news++;
+    }
+	msg('info', t('Удаление записей'), t('<b>%deleted</b> из <b>%selected</b> выбранных вами записей было удалено', ['deleted' => $moved_news, 'selected' => count($selected_news)]), $PHP_SELF.'?mod=editnews');
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Mass Move to Cat
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if ($action == 'movetocat') {
+	if (empty($selected_news)) {
+	    msg('error', t('Ошибка'), t('Не выбрано записей для изменения категории.'), $PHP_SELF.'?mod=editnews');
+	}   
+	echoheader('options', t('Изменение категории'));
+?>
+
+<form action="<?=$PHP_SELF; ?>" method="post">
+<table border="0" cellpading="0" cellspacing="0" width="100%" height="100%">
+ <tr>
+  <td><?=t('Изменить категорию для выбранных (<b>%selected</b>) записей на:', ['selected' => count($selected_news)]); ?>
+	<select name="move_to_category"><option value=""> </option>
+	<?=category_get_tree('&nbsp;', '<option value="{id}">{prefix}{name}</option>'); ?>
+	</select>
+
+	<?php foreach ($selected_news as $newsid){ ?>
+	<input type="hidden" name="selected_news[]" value="<?=$newsid; ?>">
+	<?php } ?>
+
+	<input type="hidden" name="action" value="domovetocat">
+	<input type="hidden" name="mod" value="editnews">
+	<input type="submit" value="OK">
+</table>
+</form>
+
+<?php echofooter();
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  DO Mass Move to One Category
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if ($action == 'domovetocat'){
+	if (empty($selected_news)) {
+	    msg('error', t('Ошибка'), t('Не выбрано записей для изменения категории.'), $PHP_SELF.'?mod=editnews');
+	}
+
+    $righ_have = (!cute_get_rights('approve_news') and cute_get_rights('edit_all')) ? true : false;
+	
+	if (!$righ_have) {
+		exit ('Действие запрещено');
+	}
+
+    if (!$count = $sql->select(['news', 'where' => ['`id` IN ('.join(', ', $selected_news).')']])) {
+		exit ('Выбранные Вами записи не найдены');
+	}
+	
+	run_actions('mass-move-to-category');
+        
+	$sql->update(['news', 'where' => ['`id` IN ('.join(', ', $selected_news).')'], 'values' => ['category' => $move_to_category]
+	]) or exit ('Запрос не выполнен, попробуйте снова !');
+   
+	msg('info', t('Изменение категории'), t('Для <b>%moved</b> из <b>%selected</b> записей категория была изменена.', ['moved' => $count, 'selected' => count($selected_news)]), $PHP_SELF.'?mod=editnews');
+}
+
+///////////////////////////////////////////// Mass Move to Type ///////////////////////////////////////
+if ($action == 'movetotype'){
+	if (empty($selected_news)) {
+	    msg('error', t('Ошибка'), t('Не выбрано записей для изменения типа поста.'), $PHP_SELF.'?mod=editnews');
+	} 
+	
+	echoheader('options', t('Изменение типа поста'));
+?>
+
+<form action="<?=$PHP_SELF; ?>" method="post">
+<table border="0" cellpading="0" cellspacing="0" width="100%" height="100%">
+ <tr>
+  <td><?=t('Изменить тип поста для выбранных (<b>%selected</b>) новостей на:', ['selected' => count($selected_news)]); ?>
+	<select name="type" size="1" id="type">
+		<option value="">...</option>
+		<option value="page">Страница</option>
+		<option value="blog">Блог</option>
+	</select>
+
+<?php foreach ($selected_news as $newsid){ ?>
+	<input type="hidden" name="selected_news[]" value="<?=$newsid; ?>">
+<?php } ?>
+
+	<input type="hidden" name="action" value="domovetotype">
+	<input type="hidden" name="mod" value="editnews">
+	<input type="submit" value="OK">
+</table>
+</form>
+
+<?php echofooter();
+}
+
+///////////////////////////////////////DO Mass Move to One Category/////////////////////////////////////////////
+if ($action == 'domovetotype') {
+
+	if (empty($selected_news)) {
+	    msg('error', t('Ошибка'), t('Не выбрано записей для изменения.'), $PHP_SELF.'?mod=editnews');
+	}
+
+	$righ_have = (!cute_get_rights('approve_news') and cute_get_rights('edit_all')) ? true : false;
+	
+	if (!$righ_have){
+		exit ('Действие запрещено'); 
+	}
+
+    if (!$count = $sql->count(['news', 'where' => ['`id` IN ('.join(', ', $selected_news).')']])){
+		exit ('Выбранные Вами записи не найдены');
+	}
+
+	$sql->update(['news', 'where' => ['`id` IN ('.join(', ', $selected_news).')'], 'values' => ['type' => $type]
+	]) or exit ('Запрос не выполнен, попробуйте снова !');
+
+	msg('info', t('Изменение категории'), t('Для <b>%moved</b> из <b>%selected</b> новостей категория была изменена.', ['moved' => $count, 'selected' => count($selected_news)]), $PHP_SELF.'?mod=editnews');
+}
+//////////////////////////////////// type /////////////////////////////////////////////////
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Mass Publish
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if ($action == 'publish'){
+
+	if (!$selected_news){
+	    msg('error', t('Ошибка'), t('Не выбрано записей для опубликования.'), $PHP_SELF.'?mod=editnews');
+	}
+
+	echoheader('options', t('Опубликовать новости'));
+?>
+
+<form method="post" action="<?=$PHP_SELF; ?>">
+<table border="0" cellpading="0" cellspacing="0" width="100%" height="100%">
+ <tr>
+  <td><?=t('Уверены, что хотите опубликовать выбранные(<b>%selected</b>) новости?', ['selected' => count($selected_news)]); ?>
+   <br /><br />
+	<input type="button" value="   <?=t('Нет'); ?>   " onclick="javascript:document.location='<?=$PHP_SELF; ?>?mod=editnews'"> &nbsp; 
+	<input type="submit" value="   <?=t('Да'); ?>   ">
+	<input type="hidden" name="action" value="dopublish">
+	<input type="hidden" name="mod" value="editnews">
+
+	<?php foreach ($selected_news as $newsid){ ?>
+		<input type="hidden" name="selected_news[]" value="<?=$newsid; ?>">
+	<?php } ?>
+
+</table>
+</form>
+
+<?php echofooter();
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  DO Mass Publish News
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if ($action == 'dopublish'){
+
+	if ( empty($selected_news) ) {
+	    msg('error', t('Ошибка'), t('Не выбрано новостей для опубликования.'), $PHP_SELF.'?mod=editnews');
+	}
+
+	$righ_have = (!cute_get_rights('approve_news') and cute_get_rights('edit_all')) ? true : false ;
+	
+	if (!$righ_have){
+		exit ('Действие запрещено. У вас не прав для его совершения.'); 
+	}
+	
+	if(!$count = $sql->count(['news', 'where' => ['`id` IN (' .join(', ', $selected_news). ')']])){
+		exit ('Действие запрещено');
+	}
+
+    run_actions('mass-publish');
+   
+	$sql->update(['news', 'where' => ['`id` IN ('.join(', ', $selected_news).')'], 'values' => ['hidden' => false]
+	]) or exit ('Запрос не выполнен, попробуйте снова !');
+
+	msg('info', t('Опубликовать новости'), t('<b>%moved</b> из <b>%selected</b> выбранных вами новостей было опубликовано.', ['moved' => $count, 'selected' => count($selected_news)]), $PHP_SELF.'?mod=editnews');
+}
+
+// ********************************************************************************
+// Edit News Article
+// ********************************************************************************
+if ((empty($action) and isset($id)) or $action == 'editnews') {
+	
+	if ( empty($post) ){
+		msg ('error', t('Ошибка'), t('Новость с ID <b>%id</b> не найдена', ['id' => $id]));
+	}
+	
+	if (!cute_get_rights('edit_all') and (cute_get_rights('edit') and $post['author'] != $member['username'])){
+		header('Location: '.$PHP_SELF.'?mod=editnews');
+		exit;
+	}  
+    echoheader('editnews', t('Редактирование новости "%title"', ['title' => replace_news('show', $post['title'])]));
+?>
+<style type="text/css">
+#testWrap {
+    width:100%;
+	width:800px; 
+	display:table; 
+	margin:10px 0; 
+	vertical-align: middle
+}
+
+#testWrap img {
+	width:100%;
+	height:auto;
+	max-width:767px;
+	max-height:700px
+}
+</style>
+
+<ul id="tabs">
+	<li><a href="#short"><?=t('Короткая версия')?></a></li>
+	<li><a href="#full"><?=t('Полная версия')?></a></li>
+	<li><a href="#more"><?=t('Дополнительно')?></a></li>
+	<!--li><a href="#eng"><?//=t('Английская версия')?></a></li-->
+	<!--li><a href="#file"><?//=t('Медиа файлы')?></a></li-->	
+</ul>
+
+<br clear="both"> 
+<br clear="both"> 
+	 
+<form method="post" id="editnews" name="editnews" action="<?=$PHP_SELF; ?>" enctype="multipart/form-data">
+	<table width="100%">	
+		<tr>
+			<td valign="top">
+		    <!-- заголовок -->
+			<fieldset id="title">
+				<legend><?=t('Заголовок'); ?></legend>
+				<input type="text" id="TitleVal" name="title" value="<?=htmlspecialchars(replace_news('admin', $post['title'])); ?>">
+			</fieldset>
+				
+			<!--короткая -->
+			<fieldset class="tab" id="short">
+				<legend><?=t('Прикрепить изображение') ?></legend>
+					<input type="file" id="xhrField" name="Filedata[]" multiple />
+					<input type="button" id="recordImage" value=" <?=t('Перезаписать'); ?> " disabled />
+					<div id="xhrStatus"></div><br />
+			
+				<legend><?=t('Короткая новость'); ?></legend>
+				<?php if ($post['type'] === 'php') { ?>
+					<textarea name="short" id="short_story"><?=htmlspecialchars(replace_news('admin', $post['short']), NULL, ''); ?></textarea>
+				<?php } else { ?>
+					<?=run_filters('edit-advanced-options', 'short'); ?>
+					<textarea name="short" class="story"><?=htmlspecialchars(replace_news('admin', $post['short']))?></textarea>
+				<?php } ?>
+				 
+				<p style="margin:1em 0;">
+					<a href="javascript:ShowOrHide('makeInputlink')"><?=t('Постояная ссылка')?></a>
+				</p>	
+				<input type="text" id="makeInputlink" style="display:none;" size="100"  value="<?=cute_get_link($post);?>" placeholder="<?=t('Постояная ссылка')?>" /></p>
+			
+			</fieldset>
+			<!--//короткая-->
+		
+			<!--полная-->
+			<fieldset class="tab fade" id="full"><legend><?=t('Полная новость')?></legend>
+				<?=run_filters('edit-advanced-options', 'full') ?>
+				<textarea name="full" class="story"><?=htmlspecialchars(replace_news('admin', $post['full'])) ?></textarea>
+			</fieldset>
+			<!--//полная -->
+<?php
+	$post['attach'] =CN::isJson($post['attach']) ? json_decode($post['attach']) : '';
+?>
+			<fieldset class="tab fade" id="more"><legend><?=t('Краткое описание')?></legend>
+				<textarea name="description" size="100" placeholder="Meta description"><?=htmlspecialchars(replace_comment('admin', $post['description']))?></textarea>
+				<hr style="height:0" />
+				<legend><?=t('Ключевые слова')?></legend>
+				<textarea name="keywords" size="100" placeholder="Meta keywords"><?=htmlspecialchars(replace_comment('admin', $post['keywords']))?></textarea>
+				<hr style="height:0" />
+				<legend><?=t('Медиа файлы')?></legend>
+				<input type="text" id="attachment" size="100" name="attach" value="<?=$post['attach']->file?>" placeholder="Ссылка с Youtube. Например https://youtu.be/MUNIgCB8A18" />
+			</fieldset>
+	
+			<fieldset class="tab fade" id="file" style="width: 95%;">
+				<legend><?//=t('Загрузка файлов') ?></legend>
+				<!--input type="text" id="attachment" name="attach" value="" style="width:304px;" /-->
+		        <a role="button" href="#">Redactor</a>
+			
+			<span id="make_thumb">
+	
+	<?///=makeDropDown([t('Добавить'), t('Презаписать'), t('Video')], 'actIcons'); ?>
+	<!--input type="file" name="Filedata[]" size="45" id="XhrField"> 
+	<input type="button" id="XhrUpload" style="display:none;" value=" <?//=t('Перезаписать') ?> "-->
+	<?php /*if (extension_loaded('gd') and file_exists(UPLOADS.'/posts/'.$post['image'])): ?>
+			<div id="testWrap">
+				<!--input type="text" name="image" size="70" value="<?//=$config['path_image_upload'] .'/posts/'. $post['image'] ?>"-->
+				<img id="postImage" src="<?=$config['path_image_upload'].'/posts/'.$post['image'] ?>" />
+			</div>
+	<?php endif;*/ ?>
+
+    <?//=run_filters('edit-adepto-list', 'attach'); ?>
+	<!--p>
+		<input type="text" name="x1" id="x1" placeholder="x1" />
+		<label for="x1">x1:</label>
+	</p>
+	<p>
+		<input type="text" name="y1" id="y1" placeholder="y1" />
+		<label for="y1">y1:</label>
+	</p>
+	<p>
+		<input type="text" name="x2" id="x2" placeholder="x2" />
+		<label for="x2">x2:</label>
+	</p>
+	<p>
+		<input type="text" name="y2" id="y2" placeholder="y2" />
+		<label for="y2">y2:</label>
+	</p>
+	<p>
+		<input type="text" name="width" id="width" placeholder="width" />
+		<label for="width">width:</label>
+	</p>
+	<p>
+		<input type="text" name="height" id="height" placeholder="height" />
+		<label for="height">height</label>
+	</p-->  
+
+	<!--<ul style="list-style-type:none; border: 1px #f7f7f7 solid; margin: 6px; padding: 5px; float: left; width: 45%">
+		<li></li>
+		<li><input type="checkbox" name="square" id="square"><label for="square"><?//=t('Кадрировать'); ?></label></li>
+	</ul>-->
+
+    </span>
+    <span id="result"></span>
+	<table class="panel">
+	
+	<?php //if(reset($sql->select(['attach', 'where' => array("post_id = $id")]))): 
+		//foreach($sql->select(array('attach', 'where' => array("post_id = $id"), 'orderby'=> array('id', 'ASC'))) as $k => $imgs){  			
+	?>
+	
+	<!--tr <?//=cute_that(); ?>>
+	<td width="15" align="center"><?//=($k + 1); ?>
+	<td width="50"> 
+	<a><img title="<?//=$imgs['file'];?>" src="/strawberry/thumb.php?src=<?//=$config['path_image_upload'].'/Gallery/'.$imgs['file']; ?>&w=50&h=50&q=80" alt="" />
+	</a> 
+	<td align="center"> <i class="icon-ok"></i>
+	<input style="width:200px;" type="text" value="<?//=$imgs['description']; ?>" id="desc<?//=$imgs['id']; ?>" placeholder="описание фото" /> 
+	<input type="button" style="vertical-align:middle" onclick="doAjax(this.up(), 
+	{action: 'edit_img_desc', selected_id: '<?//=$imgs[id]; ?>', desc: $('desc<?//=$imgs[id];?>').value}); return false;" value="<?//=t('Edit'); ?>">
+	<td width="90" align="center">
+	<?//=$imgs['width']; ?> x <?///=$imgs['height']; ?>
+	<td width="120" align="center"><?//=formatsize($imgs['size']);?>
+	<td width="90" align="center"> 
+	<?//=t('Удалить'); ?> &nbsp; 
+	<input type="checkbox" name="selected_imgs[]" value="<?//=$imgs['file']; ?>" style="margin:3px;"-->
+    
+	<?php //} ?>
+	
+	<?php //endif; ?>
+	</table>
+	</fieldset>
+	
+		<!-- кнопки -->
+		<fieldset id="actions"><legend><?=t('Действие'); ?></legend>
+		<input type="submit" value="<?=t('Редактировать'); ?>" accesskey="s">
+		<input type="button" onclick="" value="<?=t('Предварительный просмотр'); ?>" accesskey="p">
+		<input type="button" onclick="javascript:confirmDelete('?mod=editnews&amp;action=delete&amp;selected_news[]=<?=$id; ?>')" value="<?=t('Удалить'); ?>" accesskey="d">
+		</fieldset>
+		<!-- //кнопки -->
+	</td>
+    
+		<td valign="top" width="270">
+			<fieldset id="options">
+				<legend><?=t('Настройки'); ?></legend>
+				<?=run_actions('edit-advanced-options'); ?>
+			</fieldset>
+			<input type="hidden" name="id" value="<?=$id;?>">
+			<input type="hidden" name="mod" value="editnews">
+			<input type="hidden" name="action" value="doeditnews">
+	</table>
+</form>
+
+	<!-- комментарии -->
+	<fieldset class="tab3" id="">
+	<legend><?=t('Комментарии'); ?></legend>
+	<?php include 'editcomments.mdu'; ?>
+	</fieldset>
+	<!-- //комментарии -->
+
+<!--script type="text/javascript" src="ckeditor/ckeditor.js"></script-->
+<!--script type="text/javascript" src="ckfinder/ckfinder.js"></script-->
+<script type="text/javascript" src="../themes/js/jquery.js"></script>
+<script type="text/javascript" src="js/redactor.js"></script>	
+<script type="text/javascript">
+<!--
+
+$.noConflict();
+jQuery(".story").redactor({
+	imageUpload: '/ajax/image.upload.php', // fileUpload: '/ajax/files.upload.php',
+	imageGetJson: '/uploads/json.images.php'
+});
+
+$(document).on('click', 'a.button', function(e, a) {
+    
+	/*CKFinder.modal({
+		width : 800, 
+		height: 600,
+		chooseFiles: true,
+		onInit: function (finder) {
+			finder.on('files:choose', function(e) {
+				var file   = e.data.files.first();
+				var output = a.previous('input');
+				output.setValue(file.getUrl());
+			});
+
+			finder.on('file:choose:resizedImage', function(e) {
+				var output  = a.previous('input');
+				output.setValue(e.data.resizedUrl);
+			});
+		}
+	});*/
+});
+
+var xhr_file = null;
+
+function xhr_send(file, e) {
+	
+	if (!file) {
+		return;
+	}
+	
+	var ajax = getXmlHttp();
+
+	ajax.onreadystatechange = function(){
+		if ( this.readyState == 4 ) {
+			$(e).src = this.responseText;
+		}
+	}
+		
+	ajax.open('POST', '<?=$PHP_SELF;?>?mod=<?=$mod?>&action=recordimage&id=<?=$id?>');
+	ajax.setRequestHeader('Cache-Control', 'no-cache');
+	ajax.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+	ajax.setRequestHeader("X-File-Name", file.name);
+	ajax.send(file);
+}
+
+$('xhrField').observe('change', function(e) {
+	xhr_file = this.files[0]; 
+	fileInfoParse(xhr_file, 'xhrStatus');
+	$('recordImage').enable();
+});
+
+$('recordImage').on('click', function(e){	
+	e.stop(); xhr_send(xhr_file, 'srcImage');
+});
+
+var CKConfig = {
+	//height: 250,
+	//filebrowserBrowseUrl: 	   'ckfinder/ckfinder.html',
+	//filebrowserImageBrowseUrl: 'ckfinder/ckfinder.html?type=Images',
+	//filebrowserPostsBrowseUrl: 'ckfinder/ckfinder.html?type=Posts',
+	//filebrowserUploadUrl: 	   'ckfinder/core/connector/php/connector.php?command=QuickUpload&type=Files',
+	//filebrowserImageUploadUrl: 'ckfinder/core/connector/php/connector.php?command=QuickUpload&type=Images',
+	//filebrowserPostsUploadUrl: 'ckfinder/core/connector/php/connector.php?command=QuickUpload&type=Posts'
+};
+
+//$$("textarea.story").each( function (area) {
+//	CKEDITOR.replace(area, CKConfig);
+//});
+
+/*
+new Cropper.Img('postImage', {
+	displayOnInit: true,
+	onEndCrop: onEndCrop, //onloadCoords: {x1:10, y1:10, x2:210, y2:110},
+	ratioDim: {x:300, y:300}
+});	
+
+function onEndCrop(coords, dimensions) {
+    $('x1').value     = coords.x1;
+	$('y1').value     = coords.y1;
+	$('x2').value     = coords.x2;
+	$('y2').value     = coords.y2;
+	$('width').value  = dimensions.width;
+	$('height').value = dimensions.height;
+}*/
+-->
+</script>
+<?php echofooter();
+}
+// ********************************************************************************
+// Do add News to DB
+// ********************************************************************************
+if ($action == 'doeditnews'){
+
+    $allowed_upload = false;
+	
+	if(($added_time = strtotime($day.' '.$month.' '.$year.' '.$hour.':'.$minute.':'.$second)) == -1)
+	{
+    	$added_time = time;
+   	}
+	 
+	$url   = $url ? mb_namespace($url) : mb_namespace(totranslit($title));
+	$title = $title ? replace_news('add', $title) : 'Post '.langdate('d.m.Y', $added_time);
+	
+	$values['date']     = $added_time;
+	$values['title']    = $title;
+    $values['url']      = $url;
+	$values['hidden']   = cute_get_rights('approve_news');
+	$values['category'] = $cat ? join(',', array_keys($cat)) : '';
+
+	if ( $_FILES["Filedata"] || !$_FILES['Filedata']['error'] )
+	{ 
+		$n = 0;
+        foreach ($_FILES['Filedata'] as $k => $l){
+            foreach ($l as $i => $v) {
+				if (!array_key_exists($i, $files))
+                   $files[$i]     = [];
+                   $files[$i][$k] = $v;
+            }
+        }
+		
+		foreach ( $files as $file ) { 
+		
+			$handle = new classes\Upload($file);  
+ 
+            if ($handle->uploaded) {
+ 
+				$handle->file_name_body_pre = 'post_';
+				$handle->file_new_name_body = $url;
+				$handle->forbidden          = ['application/*'];
+				$handle->allowed 			= ['image/*']; 
+				
+				if ($config['poster_ext']) {
+					$handle->image_convert  = $config['poster_ext'];			
+				}
+				
+				$handle->process( UPLOADS . '/posts');
+			
+				if ($handle->processed){ 
+					$file 	 = $handle->file_dst_name;				
+					$values['image'] = $handle->file_dst_name; //reset($file);
+				
+				} else 	$handle->error;
+			}  $handle->clean();
+        }
+	}
+	
+	$sql->update(['news', 'where' => $id, 'values' => $values]);	
+	
+	$values = [];
+
+	$values['short'] = replace_news('add', $short);
+	$values['full']  = replace_news('add', $full);
+	$values['description'] = replace_news('add', strip_tags($description));
+	$values['keywords']    = replace_news('add', strip_tags($keywords));
+	
+	if ( !empty($_POST['attach']) ) {
+		
+		$attach = $cute->value ($_POST['attach']);
+		
+		$data['m'] = (FALSE !== strpos ($attach, "https://youtu") OR substr($attach, -3) == 'mp4') ? 'video' : 'audio';
+		
+		$data['uid']     = 'attach'; //uid: 'attach1',
+		$data['file']    = $attach ; //uid: 'attach1',
+		$data['poster']  = is_array($images) ? reset($images) : '';       //uid: 'attach1',
+		$data['comment'] = $title ;  //uid: 'attach1',
+		$data = $cute->json_encode ($data) ;
+		$values['attach'] = $data;
+	}
+
+	$sql->update(['story', 'where' => $id, 'values' => $values]);
+	
+	run_actions('edit-save-entry'); 
+    run_actions('del-files-entry');	// ХАК для плагина Adepto Fastload 0.1 или как удалить файл из новости
+
+	/*
+	if (isset($_FILES["Filedata"]) || !$_FILES["Filedata"]["error"]){
+	
+        $n = 0;
+        include_once classes_directory.'/class.upload.php';
+
+        $files = [];
+        foreach ($_FILES['Filedata'] as $k => $l) {
+            foreach ($l as $i => $v) {
+				if (!array_key_exists($i, $files))
+					$files[$i]     = [];
+					$files[$i][$k] = $v;
+            }
+        }
+
+        foreach ($files as $file){ 
+			$n++;
+			$handle = new Upload($file); 
+
+			if($handle->uploaded) {
+	
+				$handle->file_new_name_body = $url; 	///   2var
+				$handle->allowed 			= array('image/*'); ///   2var
+				$handle->forbidden          = array('application/*');
+				$handle->image_convert 		= 'jpg';
+			
+				$handle->process(upload_files.'/Gallery');
+			
+				if($handle->processed){ 
+
+					$values = array(
+						'post_id'   => $id, 
+						'post_type' => $type, 
+						'file' 		=> $handle->file_dst_name, 
+						'width'     => $handle->image_dst_x, 
+						'height'    => $handle->image_dst_y,
+						'ext'  		=> $handle->file_dst_name_ext, 
+						'size'		=> $handle->file_src_size
+					);
+					
+					$sql->insert(array('table' => 'attach', 'values' => $values));
+				
+				} else $handle->error;
+			}		$handle->clean();
+        }
+    }*/
+	
+	//if (isset($_FILES['newsicon']) and !$_FILES['newsicon']['error']){
+		//$ext   = end($ext  = explode('.', $_FILES['newsicon']['name']));
+		//$type  = end($type = explode('/', $_FILES['newsicon']['type']));
+		//$size  = $_FILES['newsicon']['size'];
+		//$image = preg_replace('/(.*?).'.$ext.'$/i', $url, $_FILES['newsicon']['name']).'.'.$ext;
+		//$cute->allowed_extensions($type) ? move_uploaded_file($_FILES['newsicon']['tmp_name'], upload_files.DS.$image) : die();
+		//$make_thumb = !empty($make_thumb) ? $make_thumb : $config['newsicon'];
+		//@img_resize(upload_files.DS.$image, upload_files.DS.'thumbs'.DS.$image, $make_thumb);
+	//}
+
+	echo cute_get_link ($post);
+ 
+    msg('info', t('Новость отредактирована'), t('Новость "%title" была успешно отредактирована', ['title' => $title]), $PHP_SELF.'?mod=editnews&amp;id='.$id);
+}
+
+
+if (isset($action) and $action == 'recordimage'){
+
+    !empty($id) or exit('Request have is not ID');
+	
+	if (isset($_SERVER['HTTP_X_FILE_NAME']) && isset($_SERVER['CONTENT_LENGTH'])) {
+	 
+		$handle = new classes\Upload('php:'.$_SERVER['HTTP_X_FILE_NAME']); 
+			
+		if ($handle->uploaded)
+		{
+			$handle->file_new_name_body = $post['url'];
+			$handle->file_name_body_pre = 'post_';
+			$handle->allowed 			= ['image/*'];
+			$handle->forbidden          = ['application/*'];
+			$handle->file_overwrite     = true;	
+			$handle->Process(UPLOADS . '/posts');
+			
+			if ($handle->processed)
+			{			
+				$sql->update(['news', 'where' => $id, 'values' => ['image' => $handle->file_dst_name]]);
+				$result = $config['path_image_upload'] .'/posts/'. $handle->file_dst_name.'?'.time;
+			}
+		}
+		$handle-> Clean();
+	}
+	   
+	exit ($result);
+}
+
+
+/////////////////////////////////////////////////////
+function makeList($array, $every = 0)
+{
+	static $i = 0, $result;
+			
+    if ($i == 0){
+        $result = "<tr>\n";
+    }
+
+    foreach ($array as $k => $v){
+		
+		if (is_array($v)){
+        	$i--;
+        	$result .= '<tr '.cute_that().'>';
+        	makeList($v, $every);
+        } else {
+        	$result .= (($every and $k%$every == 0) ? "<tr>" : "");
+        	$result .= '<td height="24">'.$v.'</td>'."\n";
+        }
+	}  
+	$i++; 
+	return $result;
+}
+?>

@@ -1,0 +1,78 @@
+<?php
+// ********************************************************************************
+// Add IP
+// ********************************************************************************
+if ($action == 'add'){
+    if ( empty($add_ip) ){
+    	msg('error', t('Ошибка'), t('Заполните поле IP!'), $PHP_SELF.'?mod=ipban');
+    }
+
+    if (!$sql->select(['ipban', 'where' => ["ip = $add_ip"]])){
+	    $sql->insert(['ipban', 'values' => ['ip' => $add_ip]]);
+    }
+}
+
+// ********************************************************************************
+// Remove IP
+// ********************************************************************************
+if ($action == 'remove'){
+    if (!$remove_ip){
+    	msg('error', t('Ошибка'), t('Заполните поле IP!'), $PHP_SELF.'?mod=ipban');
+    }
+
+    $sql->delete(['ipban','where' => ["ip = $remove_ip"]]);
+}
+
+// ********************************************************************************
+// List all IP
+// ********************************************************************************
+echoheader('options', t('Блокировка IP'));
+?>
+
+<form method="post" action="<?=$PHP_SELF; ?>">
+<table width="645">
+ <td width="321" height="33"><b><?=t('Заблокировать'); ?></b>
+  <table border="0" width="379" height="60" cellpadding="7">
+    <tr>
+    <td width="79" height="25">&nbsp;<?=t('IP адрес'); ?>
+    <td width="300" height="25"><input type="text" name="add_ip" placeholder="<?=t('IP адрес'); ?>">&nbsp;&nbsp;
+     <input type="submit" value="<?=t('Заблокировать'); ?>">
+     <input type="hidden" name="action" value="add">
+     <input type="hidden" name="mod" value="ipban">
+    </form>
+    </table>
+    <tr>
+    <td width="654" height="1">
+
+	
+	<table class="panel">
+	 <caption><?=t('Заблокированные IP адреса'); ?></caption>
+     <tr>
+       <th align="left"> &nbsp; &nbsp;<?=t('IP'); ?>
+       <th align="left"> &nbsp; &nbsp;<?=t('Сколько раз блокировался'); ?>
+       <th align="right"> &nbsp; &nbsp;<?=t('Разблокировать'); ?>
+
+<?php if(!$query = $sql->select(['ipban'])){ ?>
+
+<tr>
+ <td align="center" colspan="5"><br />&nbsp;<?=t('Нет заблокированных IP адресов! Вы дружелюбный ;).'); ?>
+
+<?php
+} else {
+	foreach($query as $row){
+?>
+
+	<tr>
+	 <td> &nbsp; &nbsp;<a href="http://foobar.ru/ipwhois.php?ip=<?=$row['ip']; ?>&c=ripe" target="_blank"><?=$row['ip']; ?></a>
+	 <td> &nbsp; &nbsp;<?=$row['count']; ?>
+	 <td align="right"> <a href="<?=$PHP_SELF; ?>?mod=ipban&action=remove&amp;remove_ip=<?=$row['ip']; ?>"><?=t('[разблокировать]'); ?></a>
+
+<?php
+	}
+}
+?>
+
+</table>
+</table>
+
+<?php echofooter(); ?>

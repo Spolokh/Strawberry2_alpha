@@ -1,0 +1,194 @@
+<?php
+function chmod_check($dir = '.', $check = false) {
+	
+	$handle = opendir($dir);
+	
+	while ($file = readdir($handle)){
+		if ($file != '.' and $file != '..' and is_dir($dir.'/'.$file)) {
+			$files[] = $file;
+        }
+	}
+	
+	$handle = opendir($dir);
+	while ($file = readdir($handle)){
+		if ($file != '.' and $file != '..' and is_file($dir.'/'.$file)) {
+			$files[] = $file;
+        }
+    }
+	
+    if ($files){
+    	if ($check){
+    		return true;
+    	}
+    	echo '<ul style="margin: 0;margin-left: 10px;list-style-type: none;">';
+
+	    foreach ($files as $k => $v){
+	    	$name  = totranslit($dir.'/'.$v);
+	    	$chmod = ' <small>(CHMOD: <b>'.(@decoct(@fileperms($dir.'/'.$v)) % 1000).'</b>)</small>';
+	    	$plmin = makePlusMinus($name).' ';
+
+	    	if (is_dir($dir.'/'.$v)){
+	            echo '<li '.cute_that().' style="padding: 5px;">'.(chmod_check($dir.'/'.$v, true) ? $plmin : '').$v.$chmod;
+	            echo '<ul id="'.$name.'" style="margin: 0;margin-left: 10px; display: none; list-style-type: none;">';
+	            chmod_check($dir.'/'.$v);
+	            echo '</ul>';
+	        } else {
+	        	echo '<li style="padding: 5px;">'.$v.$chmod;
+	        }
+	    }
+	 echo '</ul>';
+       }
+}
+
+echoheader('home', t('добро пожаловать')); // Define Welcome Message Do we have enough free space ?
+
+ $dfs = @disk_free_space('./');
+   if ($dfs and $dfs < 10240) {
+	$freespace = formatsize($dfs);
+?>
+ <div class="panel" ><?=t('<b>Внимание!</b><br />Системой обнаружено, что на сервере мало свободного места - <b>%free_space</b>. Вам необходимо предпринять меры по увеличению дискового пространства для нормальной работы скрипта. Также необходимо сделать <a href="%url">резервную копию</a> базы новостей!', array('free_space' => $freespace, 'url' => $PHP_SELF.'?mod=backup')); ?></div>
+
+<?
+} if ($using_safe_skin) { // Are we using SafeSkin ?
+?>
+
+ <div class="panel"><?=t('<b>Внимание!</b><br />Невозможно загрузить выбранный в настройках шаблон <b>%skin</b>. Автоматически загружен шаблон по умолчанию!<br />Проверьте наличие файлов шаблона на сервере!', array('skin' => $config['skin'])); ?></div>
+
+<?
+} if ($phpversion and $phpversion < '5.3.0'){ // Is our PHP version old ?
+?>
+ <div class="panel"><?=t('<b>Внимание!</b><br />Версия php-интерпретатора, установленная на сервере, слишком старая (%version). Свяжитесь с администрацией хостинга для обновления версии php! Скачать последнюю версию можно на <a href="http://php.net/" target="_blank">официальном сайте</a>.', ['version' => $phpversion]); ?></div>
+ 
+<?
+}
+// Show Some stats
+$user_files_folder      = cute_parse_url($xfields->settings['path_upload']);
+$user_files_folder      = $user_files_folder['abs'];
+$user_images_folder     = cute_parse_url($config['path_image_upload']);
+$user_images_folder     = $user_images_folder['abs'];
+$user_userpic_folder    = cute_parse_url($config['path_userpic_upload']);
+$user_userpic_folder    = $user_userpic_folder['abs'];
+
+if ($attach_directory = explode('/', $xfields->settings['path_upload'])) {
+	$attach_directory = end ($attach_directory);
+}
+
+if ($image_upload = explode('/', $config['path_image_upload'])) {
+	$image_upload = end ($image_upload);
+}
+
+if ($userpic_upload = explode('/', $config['path_userpic_upload'])) {
+	$userpic_upload = end ($userpic_upload);
+}
+
+if ($data_folder = explode('/', data_directory)) {
+	$data_folder = end ($data_folder);
+}
+
+if ($cache_folder = explode('/', cache_directory)) {
+	$cache_folder = end ($cache_folder);
+}
+
+if ($backup_folder = explode('/', backup_directory)) {
+	$backup_folder = end ($backup_folder);
+}
+
+if ($lang_folder = explode('/', languages_directory)) {
+	$lang_folder = end ($lang_folder);
+}
+
+$test = [
+        data_directory         => $data_folder,
+        cache_directory        => $cache_folder,
+        backup_directory       => $backup_folder,
+        languages_directory    => $lang_folder.DS.$config['language'],
+        $user_images_folder    => $image_upload,
+        $user_userpic_folder   => $userpic_upload,
+        $user_files_folder     => attach,
+     ];
+
+$stat = [
+        'users'      => ['title'  => t('<a href=?mod=editusers>пользователей</a>')],
+        'news'       => ['select' => 'id', 'title' => t('<a href=?mod=editnews>новостей</a>')],
+        'comments'   => ['select' => 'id', 'title' => t('<a href=?mod=categories>комментариев</a>')],
+        'categories' => ['select' => 'id', 'title' => t('<a href=?mod=categories>категорий</a>')],
+        'catalogs'   => ['select' => 'id', 'title' => t('<a href=?mod=catalogs>каталогов</a>')],
+        'links'      => ['select' => 'id', 'title' => t('<a href=?mod=links>ссылок</a>')]
+       ];
+
+$arr_size = ['users', 'news', 'comments', 'categories', 'catalogs', 'links']; // Check the table size
+
+if ($config['database'] == 'txtsql'){
+    foreach ($arr_size as $table){
+        $size[$table] = filesize(data_directory.'/db/base/'.$table.'.MYD');
+    }
+}
+	
+$size['news'] = ($size['story'] + $size['news']);
+$lj = '<img src="'.$config['http_script_dir'].'/skins/images/user.gif" align="absmiddle">';
+
+    $myanketa = [
+	   t('Ваш логин')          => $member['username'],
+	   t('Дата регистрации')   => langdate('l, j M Y - H:i', $member['date']),
+	   t('Последний визит')    => langdate('l, j M Y - H:i', $member['last_visit']),
+	   t('Ваша группа')        => $usergroups[$member['usergroup']]['name'],
+	   t('Все публикации')     => $member['publications'],
+	   t('Ваше имя')           => $member['name'],
+	   t('Ваша почта')         => $member['mail'],
+	   t('ICQ')                => $member['icq'] ? '<img src="http://icq.com/scripts/online.dll?icq='.$member['icq'].'&img=5" align="absmiddle" /> <b>'.$member['icq'].'</b>' : '',
+	   t('Домашняя страница')  => $member['homepage'],
+	   t('Живой журнал (LJ)')  => $member['lj_username'] ? '<a href="http://'.$member['lj_username'].'.livejournal.com/">'.$member['lj_username'].'</a>' : '',
+	   t('Город / страна')     => $member['location'],
+	];
+?>
+
+<ul id="tabs">
+	<li><a href="#stat"><?=t('Cтатистика'); ?></a></li>
+	<li><a href="#sys"><?=t('Система'); ?></a></li>
+	<li><a href="#ank"><?=t('Анкета'); ?></a></li>
+</ul>
+
+<div class="tab" id="stat">
+<table width="100%" cellspacing="0" cellpadding="0">
+<? foreach ($stat as $k => $v) { 
+ showRow('<div style="padding:10px">'.t('Всего').' &nbsp; '.$v['title'].'</div>', '', count($sql->select([$k, 'select' => [($v['select'] ? $v['select'] : 'date')]])).' (<small>'.formatsize($size[$k]).'</small>)');
+ } ?>
+<tr>
+ <td colspan="2" align="center" style="padding:6px">
+ <? if ($action == 'check'){ ?>
+ <center><?=t('Используется версия <b>%current_version</b>, последняя версия <b>%new_version</b>', ['current_version' => $config['version_id'], 'new_version' => '<script language="JavaScript" src="http://strawberry.goodgirl.ru/check.php?version='.$config['version_id'].'"></script>']); ?></center>
+ <? } else { 
+ echo '<a href="'.$PHP_SELF.'?mod=main&action=check#">'.t('проверить наличие новой версии').'</a>'; } 
+ ?>
+ 
+</table>
+</div>
+
+<div class="tab" id="sys">
+  <table width="100%" cellspacing="0" cellpadding="0">
+  <? foreach ($test as $k => $v){ 
+    showRow('<div style="padding:10px">'.t('Есть доступ к папке').' &nbsp; '.$v.'</div>', '', '<font color="'.(is_writable($k) ? 'green' : 'red').'">'.(is_writable($k) ? t('Да') : t('Нет')).'</font>');
+  } ?>
+  <tr>
+   <td align="right" colspan="2"><input  type="button" value=" <?=t('проверка системы'); ?> " onclick="javascript:document.location='<?=$PHP_SELF; ?>?action=chmod'">
+</table>
+</div>
+
+<div class="tab" id="ank">
+   <table width="100%" cellspacing="0" cellpadding="0">
+     <?php foreach ($myanketa as $myrow => $mydata) {
+		 showRow('<div style="padding:10px">'.$myrow.':</div>', '', $mydata);
+	  }  ?>
+<tr>
+<td align="right" colspan="2"><input type="button" value=" <?=t('редактировать анкету'); ?> " onclick="javascript:document.location='<?=$PHP_SELF; ?>?mod=personal'"> 
+</table>
+</div>
+
+<div id="subfoot">
+<?
+    if ($action == 'chmod') {
+         echo '<div>'.chmod_check().'</div>';
+ }
+?>
+</div>
+<? echofooter(); ?>

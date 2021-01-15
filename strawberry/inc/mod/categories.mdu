@@ -1,0 +1,222 @@
+<?php
+
+$query = $sql->select(['categories', 'orderby' => ['id', 'ASC']]);
+
+function tmp_category_menu($type = '') {
+	
+	global $row, $catid, $PHP_SELF, $query, $action, $usergroups;
+
+    foreach ( (array) $query as $row ) {
+        $real[$row['id']] = $row['name'];
+
+        if( $catid == $row['id'] and $action == 'edit' ){
+        	$parent   = $row['parent'];
+        	$template = $row['template'];
+        }
+	}
+
+    if ($parent){
+		$cats_list = category_get_tree('-&nbsp', '<option value="{id}"[php]tmp_selected({id}, '.$parent.')[/php]>{prefix}{name}</option>', false);
+	} else {
+		$cats_list = category_get_tree('-&nbsp', '<option value="{id}">{prefix}{name}</option>', false);
+	}
+
+	$tpls_list = ['' => '...'];
+		 
+	$handle      = opendir(templates_directory);
+	while ( $dir = readdir($handle) ) {
+		if ($dir != '.' and $dir != '..' and $dir != 'Themes' and $dir != 'Users' and $dir != 'Forms' and $dir != 'mail') {
+			$tpls_list[$dir] = $dir;
+		}
+	}
+
+    $tpls_list = makeDropDown($tpls_list, 'template', $template);
+
+	ob_start();
+
+	if ($catid){
+	    foreach ($query as $row){
+	        if ($catid == $row['id'] and $action == 'edit'){
+	            $id          = $row['id'];
+	            $name        = $row['name'];
+	            $url         = $row['url'];
+	            $icon        = $row['icon'];
+	            $template    = $row['template'];
+	            $description = replace_news('admin', $row['description']);
+	            $access      = $row['usergroups'];
+				$hidden      = $row['hidden'];
+	        }
+	    }
+	}
+?>
+
+<form action="<?=$PHP_SELF; ?>?mod=categories" method="post">
+	<table border="0" width="100%" class="panel">
+		<tr>
+			<td width="200"><?=t('Название'); ?>
+			<td><input size="45" type="text" value="<?=$name;?>" name="name">
+		<tr>
+			<td width="200"><?=t('УРЛ'); ?>
+			<td><input size="45" type="text" value="<?=$url;?>" name="url">
+		<tr>
+			<td><?=t('Иконка'); ?>
+			<td><input size="45" value="<?=$icon;?>" type="text" name="icon">
+		<tr>
+			<td><?=t('Родитель'); ?>
+			<td>
+				<select size="1" name="parent" style="width:360px;">
+					<option value="0">...</option>
+					<?=$cats_list; ?>
+				</select>
+		<tr>
+			<td width="200"><?=t('Шаблон'); ?>
+			<td><?=$tpls_list; ?>
+		<tr>
+			<td width="200"><?=t('Доступна для'); ?>
+			<td><select name="cat_usergroups[]" size="7" multiple="multiple">
+				<option value="">...</option>
+				<?php foreach ($usergroups as $group) { ?>
+				<option value="<?=$group['id']; ?>"<?=(in_array($group['id'], explode(',', $access)) ? ' selected' : ''); ?>><?=$group['name']; ?></option>
+				<?php } ?>
+				</select>
+	    <tr>
+			<td width="200"><?=t('Описание'); ?>
+			<td><?=(function_exists('insert_tags') ? run_filters('edit-advanced-options', 'description') : ''); ?>
+				<textarea size="45" id="description" name="description"><?=replace_news('show', $description); ?></textarea>		
+		<tr>
+			<td width="200"><?=t('Cкрыть'); ?>
+			<td><?=makeDropDown(['Нет','Да'], 'hidden', $hidden); ?>
+		<tr>
+			<td>
+			<td>
+				<input type="hidden" name="action" value="<?=$type; ?>">
+				<input type="hidden" name="catid" value="<?=$catid; ?>">
+				<input type="submit" value="<?=($action == 'edit'? t('Редактировать'):('Добавить')); ?>">
+	</table>
+</form>
+<?php
+    $return = ob_get_contents();
+	ob_end_clean();
+	return $return;
+}
+
+// ********************************************************************************
+// Add New Category
+// ********************************************************************************
+if ($action == 'add' and $name){
+    foreach ($query as $row){
+        if (($row['url'] == $url or $row['url'] == totranslit($name)) and $row['parent'] == $parent){
+        	msg('error', t('Ошибка'), t('Категория с таким именем уже существует.'), $PHP_SELF.'?mod=categories');
+        }
+    }
+
+    $last = end($query);
+
+    $sql->insert(['categories', 'values' => [
+			'id'   => ($last['id'] + 1),
+			'name' => $name,
+			'icon' => $icon,
+			'url'  => $url ? $url : totranslit($name),
+			'parent' => $parent,
+			'level'  => ($parent ? ($query[$parent]['level'] + 1) : 0),
+			'template'  => $template,
+			'description' => replace_news('add', $description),
+			'usergroups' => join(',', $cat_usergroups),
+			'hidden' => $hidden ? 1 : 0
+		]
+    ]);
+
+    header('Location: '.$PHP_SELF.'?mod=categories');
+}
+
+// ********************************************************************************
+// Remove Category
+// ********************************************************************************
+if ($action == 'remove' and $catid){
+		
+	foreach (explode(',', CN::getChildren($query, $catid)) as $k)
+	{ 
+		$sql->delete(['categories', 'where' => $k]);
+    }   
+	
+	header('Location: '.$PHP_SELF.'?mod=categories');
+}
+
+// ********************************************************************************
+// Edit Category
+// ********************************************************************************
+if ( $action == 'edit' and $catid > 0 ) {
+		msg('options', t('Редактировать категорию'), tmp_category_menu('doedit'));
+	
+} elseif ($action == 'doedit' and $catid and $name){
+    
+	$values['name']        = $name;
+	$values['icon']        = $icon;
+	$values['url']         = $url ? $url : totranslit($name);
+	$values['parent']      = $parent;
+	$values['level']       = $parent ? ($query[$parent]['level'] + 1) : 0;
+	$values['template']    = $template;
+	$values['description'] = replace_news('add', $description);
+	$values['usergroups']  = join(',', $cat_usergroups);
+	$values['hidden']      = $hidden ? 1 : 0;
+	
+	$sql->update(['categories', 'where' => $catid, 'values' => $values]);
+
+    header('Location: '.$PHP_SELF.'?mod=categories');
+}
+
+// ********************************************************************************
+// Show Categories
+// ********************************************************************************
+
+echoheader('options', t('Категории'));
+echo tmp_category_menu('add');
+		
+$categoriesList = function($tpl = '{id}', $result = '', $id = 0) use ($query) {
+	static $i = 0;
+	
+	if ( !reset($query) ) {
+		return '<p align="center">(<b>Категорий нет</b><br />Категории создаются при желании, вы можете прекрасно обойтись и без них.)';
+	}
+	
+	foreach (build_tree($query) as $k => $row) {
+
+		if ($id) {
+	        if ($id == $row['id']) {
+                $i++; continue;
+			}
+			
+			if (!in_array($row['id'], explode(',', getChildren($query, $id)))) {
+                $i++; continue;		
+	        }
+		}
+		
+		$pref = $row['level'] + 1;
+		$pref = $i ? $pref - ($i - 1) : $pref ;
+		$pref = str_repeat (' &nbsp; ', $pref);
+		
+		$find = ['/{id}/i', '/{name}/i', '/{parent}/i', '/{level}/i', '/{url}/i', '/{icon}/i', '/{template}/i', '/{prefix}/i'];
+		$repl = [$row['id'], $row['name'], $row['parent'], $row['level'], $row['url'], $row['icon'], $row['template'], $pref];
+		
+		$result.= preg_replace ($find, $repl, $tpl);
+	} 	return $result;
+};	
+?>
+
+<br/>
+<br/>
+<br/>
+<ul id="list">
+	<?=$categoriesList('<li id="category_{id}">
+						<span class="Id">{id}</span> {prefix} 
+						<a href="?mod=categories&amp;action=edit&amp;catid={id}"><b>{name}</b></a>
+						<span class="read">
+						<a title="'.t('Правка').'"  style="font-size:18px" class="icon icon-pencil" href="?mod=categories&amp;action=edit&amp;catid={id}"></a> &nbsp;
+						<a title="'.t('Скрыть').'"  style="font-size:18px" class="icon icon-eye-open" href=""></a> &nbsp;
+						<a title="'.t('Удалить').'" style="font-size:18px" class="icon icon-remove" href="javascript:confirmDelete(\'?mod=categories&amp;action=remove&amp;catid={id}\')"></a>
+						</span>'); 
+?>
+</ul>
+<?php 
+echofooter();
+ ?>

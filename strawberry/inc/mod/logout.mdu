@@ -1,0 +1,13 @@
+<?php
+
+cute_setcookie('username', '', (time() - 3600 * 24 * 365)); 		// cms
+cute_setcookie('md5_password', '', (time() - 3600 * 24 * 365)); 	// cms
+cute_setcookie('username', '', (time() - 3600 * 24 * 365), '/');
+cute_setcookie('md5_password', '', (time() - 3600 * 24 * 365), '/');
+cute_setcookie('login_referer', '');
+session_destroy();
+session_unset();
+cute_setcookie(session_name(), '');
+header("Location: $PHP_SELF");
+exit;
+?>

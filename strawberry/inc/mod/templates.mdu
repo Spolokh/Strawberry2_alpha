@@ -1,0 +1,190 @@
+<?php
+
+// ********************************************************************************
+// Edit Templates
+// ********************************************************************************
+
+$directory = new DirectoryIterator(templates_directory);
+
+foreach ($directory as $file) {
+    if ($file->isDir() and !$file->isDot()) {
+        $templates_list[$file->getFilename()] = $file->getFilename();
+    }
+}
+
+unset($directory);
+
+// ********************************************************************************
+// Show The Template Manager
+// ********************************************************************************
+if (empty($action)){
+
+	if (empty($do_template) or strtolower($do_template) == 'default' or is_file($do_template) or !is_dir(templates_directory.'/'.$do_template)){
+	    $do_template = 'Default';
+	}
+
+	
+	$iterator = new DirectoryIterator(templates_directory.'/'.$do_template);
+
+	foreach($iterator as $k => $file) {
+		if ($file->isFile()) { 	
+			$template[$file->getBasename('.tpl')] = htmlspecialchars(@file_read($file->getPathname()), NULL, '');
+		}
+	}
+	
+	$keys = array('active' => 'post', 'full' => 'post', 'comments' => 'comment', 'form' => 'form', 'prev_next' => 'prev-next', 'cprev_next' => 'prev-next');
+	$echo = (file_exists(languages_directory.'/'.$config['lang'].'/templates.ini') ? languages_directory.'/'.$config['lang'].'/templates.ini' : languages_directory.'/ru/templates.ini');
+	$echo = parse_ini_file($echo, true);
+
+	echoheader('options', t('Шаблоны'));
+?>
+
+<ul id="tabs">
+	<li><a href="#tplsOneTab"><?=t('Управление шаблонами') ?></a></li>
+	<li><a href="#tplsTwoTab"><?=t('Создать новый') ?></a></li>
+</ul>
+
+<table id="tplsOneTab" class="tab panel" width="100%">
+	<form method="get" width="100%">
+	<tr>
+		<td width="200">&nbsp;<?=t('Шаблон'); ?>
+		<td>:&nbsp; <b><?=$do_template; ?></b>
+    <tr>
+		<td width="200">&nbsp;<?=t('Выбрать другой'); ?>
+		<td>:&nbsp;
+		<input name="mod" type="hidden" value="templates">
+		<?=makeDropDown($templates_list, 'do_template', $do_template); ?>
+		<input type="submit" value=" Go ">
+    </form>
+</table>
+
+<table id="tplsTwoTab" class="tab panel" width="100%">
+	<form method="post" width="100%">
+	<tr>
+		<td width="200" height="27">&nbsp;<?=t('Название шаблона'); ?>
+		<td height="27">:&nbsp; <input size="20" name="name" type="text" />
+	<tr>
+		<td width="200" height="27">&nbsp;<?=t('На базе'); ?>
+		<td height="27">:&nbsp; <?=makeDropDown($templates_list, 'based', $do_template); ?>
+
+		<input name="mod" type="hidden" value="templates">
+		<input name="action" type="hidden" value="new">
+		<input type="submit" value=" Go ">
+	</form>
+</table>
+    <!--tr id="makeNew">
+    <td width="126" height="27" colspan="2">&nbsp;<a href="javascript:ShowOrHide('new', 'makeNew')">
+	<?//=t('Создать новый'); ?></a>
+    <tr id="new" style="display: none;">
+    <td width="126" height="27" colspan="2">
+    
+    <form method="post">
+    <input name="name" type="text" value=""><br />
+     
+    <input name="mod" type="hidden" value="templates">
+    <input name="action" type="hidden" value="new">
+    <input type="submit" value="Go">
+    </form>
+</table-->
+
+ <!--td width="268" height="75" align="center"-->
+ <!-- HELP 
+ <table cellspacing="0" cellpadding="0">
+  <tr>
+   <td width="25" align="middle"><img border="0" src="skins/images/help_small.gif">
+   <td> &nbsp;<a onClick="javascript:Help('templates')" href="#"><?//=t('Что такое шаблоны?'); ?></a>
+ </table>
+END HELP -->
+<!--/table-->
+<!--/form-->
+
+<br />
+<b><?=t('Редактировать части шаблона'); ?>:</b><br /><br />
+<form method="post" action="<?=$PHP_SELF; ?>">
+<table width="100%" class="panel">
+<?php foreach ($template as $file => $content){ ?>
+<tr>
+ <td height="18" colspan="2"><b><a style="font-size:12px" href="javascript:ShowOrHide('<?=$file; ?>1', '<?=$file; ?>2')"><?=($echo['part'][$file] ? $echo['part'][$file] : $file); ?></a></b>
+ <tr id="<?=$file; ?>1" style="display: none;">
+ <td>
+
+<?php
+	$template_array = $echo[$file];
+	$template_array = run_filters('template-'.str_replace('_', '-', $file), $template_array);
+?>
+
+<table>
+
+<?php
+	if ($keys[$file]){
+		foreach ($template_array as $k => $v){
+			if (substr($k, -2) != '()'){
+				$k = '$tpl[\''.$keys[$file].'\'][\''.$k.'\']';
+			} else {
+				$k = 'tpl(\''.substr($k, 0, -2).'\')';
+			}
+
+			echo '<tr '.cute_that().'>
+					<td style="padding: 5px; width: 180px"><span class="vinfo" title="'.$v.'">'.$k.'</span>
+					<td>- '.$v;
+		}
+	}
+?>
+
+</table>
+
+<tr id="<?=$file; ?>2" style="display: none;">
+ <td colspan="2"><textarea rows="9" style="width:100%; height:280px; overflow-x:hidden; overflow-y:auto" name="edit[<?=$file; ?>]"><?=$template[$file]; ?></textarea><br />
+
+<? } ?>
+
+<tr>
+ <td height="8" colspan="2">
+  <input type="hidden" name="mod" value="templates">
+  <input type="hidden" name="action" value="dosavetemplates">
+  <input type="hidden" name="do_template" value="<?=$do_template; ?>">
+  <input type="submit" value=" <?=t('Сохранить'); ?> ">
+</table>
+</form>
+
+<?php
+	echofooter();
+}
+
+if ($action == 'new'){
+
+	if (empty($name)){
+		msg('info', t('Ошибка'), t('Вы не указали имя шаблона.'), $PHP_SELF.'?mod=templates');
+	}
+
+	if (is_dir(templates_directory.'/'.$name)) {
+		msg('info', t('Ошибка'), t('Шаблон с именем <b>%template</b> уже существует.', array('template' => $name)), $PHP_SELF.'?mod=templates');
+	}
+
+	if (@mkdir(templates_directory.'/'.$name)){
+	
+	    $handle = opendir(templates_directory.'/'.$based);
+	    while ($file = readdir($handle)){
+	        if (is_file(templates_directory.'/'.$based.'/'.$file)){
+	            if (!@copy(templates_directory.'/'.$based.'/'.$file, templates_directory.'/'.$name.'/'.$file)){
+	            	msg('info', t('Ошибка'), t('Произошла какая-то ошибка, шаблон не был создан или создан, но не полностью. Проверьте, проставлены ли рекомендуемые права.'), $PHP_SELF.'?mod=templates');
+	            }
+	        }
+	    }
+
+		msg('info', t('Шаблон создан'), t('Шаблон <b>%template</b> был создан.', array('template' => $name)), $PHP_SELF.'?mod=templates');
+	} else {
+		msg('info', t('Ошибка'), t('Невозможно создать шаблон. Проверьте, проставлены ли рекомендуемые права.'), $PHP_SELF.'?mod=templates');
+	}
+}
+
+if ($action == 'dosavetemplates') {
+	
+	foreach ($_POST['edit'] as $k => $v) 
+	{
+		file_write(templates_directory.'/'.$do_template.'/'.$k.'.tpl', $v);
+	}
+
+	msg('info', t('Шаблон изменён'), sprintf(t('Шаблон <b>%template</b> был изменён.', array('template' => $name)), $do_template), $PHP_SELF.'?mod=templates');
+}
+?>

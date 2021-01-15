@@ -1,0 +1,301 @@
+<?php
+function usergroups_allow_categories($that){
+	global $sql, $edit;
+
+    foreach ($sql->select(['usergroups', 'where' => $edit]) as $row){
+    	$row['permissions'] = unserialize($row['permissions']);
+        $categories = explode(',', $row['permissions']['categories']);
+
+        if (in_array($that, $categories)){
+            return 'checked';
+        }
+    }
+}
+
+if ($_POST['action'] == 'add'){
+    if ($_POST['based']){
+        
+		foreach ($sql->select(['usergroups', 'where' => $_POST['based']]) as $row){
+            $based_access      = $row['access'];
+            $based_permissions = $row['permissions'];
+        }
+    }
+
+    $sql->insert(['usergroups',
+    'values' => ['name' => $_POST['name'], 'access' => $based_access, 'permissions' => $based_permissions]
+    ]);
+
+    header('Location: '.$PHP_SELF.'?mod=usergroups');
+} elseif ($_POST['action'] == 'edit'){
+    if (!$_POST['name']){
+        msg('error', t('Ошибка'), t('Название не может быть пустым!'), $PHP_SELF.'?mod=usergroups&edit='.$edit);
+    }
+
+    $sql->update(array(
+		'table'  => 'usergroups',
+		'where'  => array("id = $edit"),
+		'values' => array(
+					'name'   => $_POST['name'],
+					'access' => $_POST['accesstype']
+					)
+    ));
+
+    header('Location: '.$PHP_SELF.'?mod=usergroups&edit='.$edit);
+} elseif ($_GET['delete']){
+    $sql->delete(array('table' => 'usergroups', 'where' => array("id = $_GET[delete]")));
+
+    header('Location: '.$PHP_SELF.'?mod=usergroups');
+} elseif ($_POST['action'] == 'access'){
+    if (is_array($_POST['allow_categories'])){
+        foreach ($_POST['allow_categories'] as $k => $v){
+            $allow_categories[] = $k;
+        }
+
+        $_POST['permissions']['categories'] = join(',', $allow_categories);
+    }
+
+    if (is_array($_POST['fields'])){
+    	$_POST['permissions']['fields'] = $_POST['fields'];
+    }
+
+    if (is_array($_POST['groupusers'])){
+    	foreach ($_POST['groupusers'] as $user_id){
+	        $sql->update(array(
+	        'table'  => 'users',
+	        'where'  => array("id = $user_id"),
+	        'values' => array('usergroup' => $edit)
+	        ));
+    	}
+    }
+
+    $sql->update(array(
+    'table'  => 'usergroups',
+    'where'  => array("id = $edit"),
+    'values' => array(
+                'access'      => ($_POST['accesstype'] == 'full' ? 'full' : serialize(array('write' => $_POST['write'], 'read' => $_POST['read']))),
+                'permissions' => serialize($_POST['permissions'])
+                )
+    ));
+
+    header('Location: '.$PHP_SELF.'?mod=usergroups&edit='.$edit);
+}
+
+if ($edit){
+    if (!$usergroups[$edit]){
+        msg('error', t('Ошибка'), t('Нет такой группы!'), $PHP_SELF.'?mod=usergroups');
+    }
+} else {
+    $usergroups_array[] = '...';
+    foreach ($usergroups as $row){
+        $usergroups_array[$row['id']] = $row['name'];
+    }
+}
+
+echoheader('users', t('Группы пользователей'));
+?>
+
+<table width="700" border="0">
+<form action="<?=$PHP_SELF; ?>?mod=usergroups<?=($edit ? '&edit='.$edit : ''); ?>" method="post">
+<tr>
+<td>
+<table width="355" border="0" class="panel">
+<tr>
+<td> <b><?=($edit ? t('Редактировать') : t('Добавить')); ?></b>
+<tr>
+<td> <?=t('Название'); ?>
+<td><input style="width:189px;" name="name" type="text" value="<?=$usergroups[$edit]['name']; ?>">
+<tr>
+<td> <?=t('Доступ'); ?>
+<td> <?=makeDropDown(array('' => t('Настраиваемая группа'), 'full' => t('Полный')), 'accesstype', $usergroups[$edit]['access']); ?>
+
+<? if (!$edit){ ?>
+
+<tr>
+<td><?=t('На основе'); ?>
+<td><?=makeDropDown($usergroups_array, 'based', ''); ?>
+
+<? } ?>
+
+<tr>
+<td>
+<td><input type="submit" value="<?=($edit ? t('Редактировать') : t('Добавить')); ?>">
+</table>
+
+<input name="action" type="hidden" value="<?=($edit ? 'edit' : 'add'); ?>">
+</form>
+<td>
+<img border="0" src="skins/images/help_small.gif" align="absmiddle">&nbsp;<a onClick="javascript:Help('usergroups')" href="#"><?=t('Что такое группы пользователей?'); ?></a>
+</table>
+
+<table class="panel">
+	<caption><?=t('Группы'); ?></caption>
+
+<?php
+foreach ($usergroups as $row){
+    if ($edit and $row['id'] == $edit){
+        $permissions = $row['permissions'];
+        $access      = $row['access'];
+    }
+?>
+
+<tr <?=cute_that(); ?>>
+<td style="padding:10px;"><?=$row['name']; ?>
+<td width="28" align="center"><?=($edit != $row['id'] ? '<a title="Редактировать" style="font-size:18px;" class="icon-pencil" href="'.$PHP_SELF.'?mod=usergroups&edit='.$row['id'].'"></a>' : '<i class="icon-pencil"></i>'); ?>
+<td width="28" align="center"><a title="Удалить" style="font-size:18px;" class="icon-remove" href="javascript:confirmDelete('?mod=usergroups&delete=<?=$row['id']; ?>')"></a>
+
+<?php } ?>
+
+</table>
+
+<?php
+if (!$edit){
+    echofooter();
+    return;
+} else {
+?>
+
+<form action="<?=$PHP_SELF; ?>?mod=usergroups&edit=<?=$edit; ?>" method="post">
+<input name="action" type="hidden" value="access">
+<input name="accesstype" type="hidden" value="<?=($access == 'full' ? 'full' : ''); ?>">
+
+<table border="0">
+<tr>
+<td><b><?=t('Пользователи'); ?></b>
+<tr <?=cute_that(); ?>>
+<td style="padding:5px;">
+<select name="groupusers[]" size="7" multiple="multiple" style="width:260px;">
+<?php foreach ($sql->select(['users', 'where' => ['deleted != 1']]) as $row) { ?>
+<option value="<?=$row['id']; ?>"<?=($row['usergroup'] == $edit ? ' selected' : ''); ?>><?=$row['username'].($row['usergroup'] != $edit ? ' ('.$usergroups[$row['usergroup']]['name'].')' : ''); ?></option>
+<? } ?>
+</select>
+</table>
+
+<table border="0">
+<tr>
+<td><input type="submit" value="<?=t('Сохранить'); ?>">
+
+<?php
+}
+if ($access == 'full'){
+?>
+
+<tr>
+<td><?=t('<font color="ff0000"><b>Группа "%group" имеет полный полный доступ.</b></font>', array('group' => $usergroups[$edit]['name'])); ?>
+</table>
+
+<?php echofooter();
+      return;
+}
+
+ob_start();
+include modules_directory.'/options.mdu';
+ob_clean();
+
+foreach ($options as $option){
+    $option['url'] = explode('=', $option['url']);
+    $option['url'] = explode('&', $option['url'][1]);
+    $option['url'] = $option['url'][0];
+	$mods[$option['name']] = $option;
+}
+
+ksort($mods);
+?>
+
+<table border="0" style="float: left;clear: both;">
+<tr>
+<td><b><?=t('Модули'); ?></b>
+
+<?php
+foreach ($mods as $mod){
+	$k = explode('=', $mod['url']);
+	$k = end($k);
+    $file = 'mod-'.$k;
+    $mod['name'] = ($mod['name'] ? $mod['name'].' ('.$k.')' : $k);
+?>
+
+<tr>
+<td <?=cute_that(); ?> style="padding:5px;"><?=makePlusMinus($file).' '.$mod['name']; ?>
+<tr style="display: none;" id="<?=$file; ?>">
+<td>
+<?=t('запись'); ?> <?=makeDropDown([t('Нет'), t('Да')], 'write['.$k.']', $access['write'][$k]); ?><br />
+<?=t('чтение'); ?> <?=makeDropDown([t('Нет'), t('Да')], 'read['.$k.']', $access['read'][$k]); ?><br />
+
+<?php
+}
+?>
+
+<tr>
+<td><input type="submit" value="<?=t('Сохранить'); ?>">
+</table>
+
+<table border="0">
+<tr>
+<td><b><?=t('Права группы'); ?></b>
+
+<?php
+$array = [
+	'approve_news' => t('Предварительная модерация новостей'),
+	'edit'         => t('Разрешить редактировать свои публикации'),
+	'delete'       => t('Разрешить удалять свои публикации'),
+	'edit_all'     => t('Разрешить редактировать чужие публикации'),
+	'delete_all'   => t('Разрешить удалять чужие публикации'),
+	'categories'   => t('Доступные категории'),
+	'comments'     => t('Разрешить остовлять комментарии')
+];
+
+$array = run_filters('usergroups-permissions', $array);
+
+foreach ($array as $k => $v){
+    $file = 'options-'.$k;
+?>
+
+	<tr <?=cute_that(); ?>>
+		<td style="padding: 5px;"><?=makePlusMinus($file).' '.$v; ?>
+	<tr style="display: none;" id="<?=$file; ?>">
+		<td>
+
+<?php
+    if ($k == 'categories'){
+        echo category_get_tree('&nbsp;', '<label for="cat{id}"><input type="checkbox" [php]usergroups_allow_categories({id})[/php] name="allow_categories[{id}]" id="cat{id}">&nbsp;{name}</label><br />');
+    } else {
+        echo makeDropDown([t('Нет'), t('Да')], 'permissions['.$k.']', $permissions[$k]);
+    }
+}
+?>
+
+<tr>
+<td style="padding: 5px;"><small>* <?=t('под словом "публикации" имеются в виду новости, комментарии, картинки (если создаются папки пользователей) и т.д.'); ?></small>
+</table>
+
+<table border="0">
+<tr>
+<td><b><?=t('Права на поля в добавить/редактировать новость'); ?></b>
+
+<?php
+preg_match_all('/fieldset id="(.*?)"><legend>(.*?)<\/legend>/i', run_actions('new-advanced-options'), $fields['new']);
+preg_match_all('/fieldset id="(.*?)"><legend>(.*?)<\/legend>/i', run_actions('edit-advanced-options'), $fields['edit']);
+
+$fields[1] = array_merge ($fields['new'][1], $fields['edit'][1]);
+$fields[1] = array_unique($fields[1]);
+$fields[2] = array_merge ($fields['new'][2], $fields['edit'][2]);
+$fields[2] = array_unique($fields[2]);
+
+unset($fields[0], $fields['new'], $fields['edit']);
+
+foreach ($fields[2] as $k => $field){
+?>
+
+<tr>
+<td <?=cute_that(); ?> style="padding: 5px;"><?=makePlusMinus($fields[1][$k]).' '.t('Разрешить установки поля "%field"', array('field' => $field)); ?>
+<tr style="display: none;" id="<?=$fields[1][$k]; ?>">
+<td>
+<?=makeDropDown([t('Нет'), t('Да')], 'fields['.$fields[1][$k].']', ($permissions['fields'][$fields[1][$k]] !== '0' ? 1 : 0)); ?><br />
+
+<?php
+}
+?>
+
+</table>
+</form>
+
+<?php echofooter(); ?>

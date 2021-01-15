@@ -1,0 +1,57 @@
+<?php
+/**
+ * @package Private
+ * @access private
+ */
+
+include_once 'head.php';
+
+echoheader('options', '');
+?>
+
+<form method="post">
+<table border="0" cellspacing="0" cellpadding="4">
+<? foreach (run_filters('constructor', array()) as $k => $v){ ?>
+<tr <?=cute_that(); ?>>
+<td>$<?=$k; ?>
+<td>=
+<td><?=$v; ?>
+<? } ?>
+</table>
+<br />
+<input type="submit" value=" <?=t('—генерировать'); ?>">
+</form>
+
+<?
+if ($_POST){
+	echo_r($_POST);
+	$result = array();
+
+	foreach ($_POST as $k => $v){
+		if ($v[0] and $k != 'static'){
+            if ($_POST['static']){
+            	$k = 'static[\''.$k.'\']';
+            }
+
+			if ($k == 'sort' or $k == 'static[\'sort\']'){
+				$result[] = '$'.$k.' = array(\''.$v[0].'\', \''.$v[1].'\');';
+			} else {
+				$result[] = '$'.$k.' = \''.(is_array($v) ? join(', ', $v) : $v).'\';';
+			}
+		}
+	}
+
+	$result[] = 'include rootpath.\'/show_news.php\';';
+
+	echo '<br /><br /><textarea>'.join("\r\n", $result).'</textarea>';
+}
+
+echofooter();
+
+function tmp_category_selected($id){
+
+	if (@in_array($id, $_POST['category'])){
+		return ' selected';
+	}
+}
+?>

@@ -1,0 +1,275 @@
+<?php
+// ********************************************************************************
+// List All Available Guest + Show Add Guest Form
+// ********************************************************************************
+
+$number  = isset($number) ? $number : 21;
+$orderby = isset($sort) ? $sort : ['date', 'DESC'];
+
+$where   = array();
+
+if(isset($id)){
+	
+	$where[] = "id = $id";
+	$where[] = 'and';
+}
+
+$where[] = 'type = guest';
+
+
+
+$query = $sql->select(array('comments', 'where' => $where, 'orderby' => $orderby, 'limit' => array(($skip ? $skip : 0), $number)));
+$count = $sql->count(array('comments', 'where'  => $where));
+	
+if (!$action) {
+	echoheader('options', t('Сообщения'));
+?>
+
+<form method="post" name="guest" action="<?=$PHP_SELF; ?>">
+<table class="panel">
+	<tr>
+	<th>#
+	<th><?=t('Имя'); ?>
+	<th><?=t('Время'); ?>
+	<th><?=t('Ip'); ?>
+	<th><?=t('Вопрос'); ?>
+	<th><input type="checkbox" name="master_box" title="<?=t('Выбрать все'); ?>" onclick="javascript:ckeck_uncheck_all('<?=$mod; ?>')">
+   
+<?php foreach ($query as $row){ ?>
+	<tr <?=cute_that(); ?>>
+	<td width="15" align="center"><?=$row['id']; ?>
+	<td width="140"><a href="<?=$PHP_SELF; ?>?mod=guest&amp;action=editcomment&amp;id=<?=$row['id']; ?>"><?=$row['author']; ?></a>
+	<td width="150" align="center"><?=langdate('d.m.Y - H:i', $row['date']); ?> 
+	<td width="50"><?=$row['ip']; ?>
+	<td width="450" align="center"><?=$row['comment']; ?>
+	<td width="15" align="center"><input name="selected_comment[]" value="<?=$row['id']; ?>" type="checkbox">
+<?php } ?>
+	<tr>
+	<td width="" colspan="6">
+	<? if (cute_get_rights('edit_all') or cute_get_rights('delete_all')){ ?>
+	<p align="right">
+		<select name="action">
+			<option value="">- Действие -</option>
+			<option value="publish">Опубликовать</option>
+			<option value="mass_delete_comment">Удалить</option>
+		</select>
+		<input type="hidden" name="mod" value="guest">
+		<input type="submit" value="  <?=t('ок'); ?>  " accesskey="d">
+	</p>
+	<? } ?>
+	 
+	</table>
+</form>
+
+<div class="pagination pagination-centered">
+	<ul>
+		<?=$cute->pagination($count, $number, $skip); ?>
+	</ul>
+</div>
+
+<? echofooter();
+}
+
+if ($action == 'editcomment'){ // Edit Link Details
+		
+    echoheader('options', t('Редактирование'));
+	
+	$row = reset($query);
+?>
+
+<form method="post" action="<?=$PHP_SELF; ?>">
+<table class="panel">
+ <tr>
+  <td colspan="2" style="padding-bottom: 10px;"><b><?=t('Общая информация'); ?></b>
+ <tr <?=cute_that(); ?>>
+  <td>&nbsp;&nbsp;<?=t('Автор'); ?>
+  <td height="21" width="500"><?=$row['author']; ?></a>
+<tr <?=cute_that(); ?>>
+  <td height="21">&nbsp;&nbsp;<?=t('E-mail'); ?>
+  <td height="21" width="500"><?=$row['mail']; ?></a>
+ <tr <?=cute_that(); ?>>
+  <td height="21" width="150">&nbsp;&nbsp;<?=t('Дата'); ?>
+  <td height="21" width="500"><?=langdate('l, j M Y - h:i', $row['date']); ?>
+<tr <?=cute_that(); ?>>
+ <td height="21" width="150">&nbsp;&nbsp;<?=t('URL сайта'); ?>
+ <td height="21" width="500"><?=$row['homepage']; ?>
+<tr>
+ <td colspan="2" style="padding-top: 10px;padding-bottom: 10px;"><b><?=t('Редактирование данных'); ?></b>
+	<tr <?=cute_that(); ?>>
+		<td height="30">&nbsp;&nbsp;<?=t('На почту'); ?>
+		<td width="500"><input type="text" size="40" name="mail" value="<?=$row['mail']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="30">&nbsp;&nbsp;<?=t('Вопрос'); ?>
+ <td width="500"><textarea cols="60" rows="5" name="comment"><?=$row['comment']; ?></textarea>
+<tr <?=cute_that(); ?>>
+ <td height="30">&nbsp;&nbsp;<?=t('Ответ'); ?>
+ <td width="500"><textarea cols="60" rows="5" name="reply"><?=$row['reply']; ?></textarea>
+<tr <?=cute_that(); ?>>
+  <td height="35">&nbsp;&nbsp;
+  <td height="35">
+   <input type="checkbox" name="publication" <?=($row['publication'] ? 'checked' : ''); ?> id="publication">&nbsp;&nbsp; <label for="publication"><?=t('опубликовать'); ?></label> &nbsp; &nbsp; 
+   <input type="checkbox" name="sendtoauthor" id="sendtoauthor">&nbsp;&nbsp; <label for="publication"><?=t('выслать на почту'); ?></label>
+<tr <?=cute_that(); ?>>
+  <td height="21">&nbsp;&nbsp;
+  <td>
+		<input type="submit" value="<?=t('Сохранить'); ?>" accesskey="s">
+		<input type="button" value="  <?=t('Назад'); ?>  " onclick="javascript:history.back(1)">
+		<input type="hidden" name="id" value="<?=$id; ?>">
+		<input type="hidden" name="author" value="<?=$row['author']; ?>">
+		<input type="hidden" name="mod" value="guest">
+		<input type="hidden" name="action" value="doeditcomment">
+  </form>
+  </table>
+<? 
+   
+echofooter();
+//}
+}
+
+
+// Do Edit comment
+if ($action == 'doeditcomment'){
+	
+	if(!empty($mail) and !preg_match('/^[\.A-z0-9_\-]+[@][\.A-z0-9_\-]+([.][A-z0-9_\-]+)+[A-z]{1,4}$/', $mail)):
+		msg('error', t('Ошибка'), t('Извините, этот e-mail неправильный.')); 
+	endif;
+	
+	if(!empty($mail) and !empty($reply) and !empty($sendtoauthor)):
+	
+		
+		//$sendto = trim(strip_tags($mail));
+		
+		$subject  = t('Ответ на ваш вопрос');
+		
+		$MailReply  = "Ув. $author Вы писали нам\n\n";
+		$MailReply .= "Вы задавали нам вопрос\n";
+		$MailReply .= "\n-----\n\n";
+		$MailReply .= "Ответ:\n";
+		$MailReply .= $reply;
+		
+		$headers  = 'From: webmaster@dezpom.z4.ru'."\n"; 
+		$headers .= 'Reply-To: '.$config['admin_mail']."\n";
+
+		mail($sendto, $subject, $MailReply, $headers);
+		
+		/*include_once classes_directory.'/class.phpmailer.php';
+			
+		$mailer = new PHPMailer; 
+		$mailer->CharSet   = $config['charset'];
+		$mailer->From      = 'no-reply@dez-pom.ru'; //ADMMAIL
+		$mailer->FromName  = t('Администрация сайта');
+		$mailer->Sender    = $mail;
+		$mailer->Subject   = t('Ответ на ваш вопрос');
+		$mailer->Body      = $MailReply;
+		$mailer->AddAddress($mail); // кому приходит 
+		$mailer->AddReplyTo($config['admin_mail'], "Администратору сайта"); 
+		$mailer->IsHTML(true);
+		if($mailer->Send()){ 
+			unset($mailer);
+		}*/
+
+	endif;
+	
+	
+    $sql->update(['comments', 'where' => $id, 'values' =>['mail' => $mail, 'comment' => $comment,'reply' => $reply,'publication' => ($publication ? true : false)]]);
+    
+	msg('user', t('Изменения сохранены.'), t('Изменения сохранены.'), $PHP_SELF.'?mod=guest');
+}   
+
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ Массовое удаление ccылок
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+if ($action == 'mass_delete_comment'){
+
+	if (empty($selected_comments)) {
+		msg('error', t('Ошибка'), t('Не выбрано ни одного комментария.'), $PHP_SELF.'?mod=guest'); // error
+	}
+
+	echoheader('options', t('Удаление'));
+?>
+
+<form method="post" action="<?=$PHP_SELF; ?>">
+<table border="0" cellpading="0" cellspacing="0" width="100%" height="100%">
+ <tr>
+  <td>
+   <?=t('Вы уверены, что хотите удалить эти (<b>%count</b>) вопросы ?', array('count' => count($selected_comment))); ?><br /><br />
+   <input type="button" value="   <?=t('Нет'); ?>   " onclick="javascript:document.location='<?=$PHP_SELF; ?>?mod=guest'"> &nbsp; 
+   <input type="submit" value="   <?=t('Да'); ?>   ">
+   <input type="hidden" name="action" value="do_mass_delete_comment">
+   <input type="hidden" name="mod" value="guest">
+
+<?
+	foreach($selected_comments as $commid){
+	    echo '<input type="hidden" name="selected_comments[]" value="'.$commid.'">';
+	}
+?>
+</table>
+</form>
+
+<?
+	echofooter();
+}
+
+if ($action == 'do_mass_delete_comment'){
+
+	if (empty($selected_comments)) {
+		msg('error', t('Ошибка'), t('Не выбрано ни одного комментария для удаления.'), $PHP_SELF.'?mod=guest');
+	}
+
+	$deleted_comment = 0;
+
+	foreach ($selected_comment as $name){
+		$sql->delete(array('comments', 'where' => array("id = $name")));
+		
+	    $deleted_comment++;
+	}
+
+	if (count($selected_comment) == $deleted_comment){
+		msg('info', t('Удаление'), t('Все выбранные Вами комментарии успешно удалены.'), $PHP_SELF.'?mod=guest');
+	} else {
+		msg('error', t('Удаление'), t('Не удалено <b>%deleted</b> из <b>%selected</b> выбраных  ссылок.', array('deleted' => $deleted_comment,'selected' => count($selected_comment))), $PHP_SELF.'?mod=guest');
+  }
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Mass Move to Catalog
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+if ($action == 'domovetocatalog'){
+	if (!$selected_links){
+	    msg('error', t('Ошибка'), t('Не выбрано ссылок для изменения каталога.'), $PHP_SELF.'?mod=links');
+	}
+
+    //if (cute_get_rights('edit_all') or (cute_get_rights('edit') and $member['username'] == $row['author'])){// +++
+    if (cute_get_rights('edit_all') or (cute_get_rights('edit'))){
+
+		$righ_have = true;
+	} else {
+		$righ_have = false;
+	}
+
+     $query = $sql->select(array(
+    		 'table'  => 'links',
+    		 'where'  => array('id = ['.join('|', $selected_links).']')
+    		 ));
+
+
+    $moved_links = 0;
+
+    foreach ($query as $row){
+        if ($righ_have){
+	        $sql->update(array(
+	        'table'  => 'links',
+	        'where'  => array("id = $row[id]"),
+	        'values' => array('linkcat' => $category)
+	        ));
+
+            $moved_links++;
+        }
+    }
+
+	msg('info', t('Изменение категории'), t('Для <b>%moved</b> из <b>%selected</b> новостей категория была изменена.', array('moved' => $moved_links, 'selected' => count($selected_links))), $PHP_SELF.'?mod=links');
+}
+?>

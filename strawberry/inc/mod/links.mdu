@@ -1,0 +1,480 @@
+<?php
+
+// ********************************************************************************
+// List All Available Links + Show Add Links Form
+// ********************************************************************************
+
+	
+	$catalogs_array = array('' => '...');
+	
+	foreach ($sql->select(array('table' => 'catalogs')) as $catalogs_row):
+		$catalogs_array[$catalogs_row['id']] = $catalogs_row['name'];
+	endforeach; 
+  
+	$order = ($order == 'ASC' ? 'DESC' : 'ASC');
+	
+	if ($order != 'ASC' and $order != 'DESC'){
+		$order = 'DESC';
+	}
+	
+	$by     = isset($by) ? $by : 'date';
+	$sort   = isset($sort) ? $sort : array($by, $order);
+	$number = isset($number) ? $number : 21;
+	
+	$where = array();
+
+	if(isset($id)){
+		 $where[] = "id = $id";
+	}
+	
+	if($author){
+		 $where[] = "author = $author";
+	}
+	
+	if($catalog){
+		 $where[] = "catalog = $catalog";
+	}
+	
+	if($search){
+		 $where[] = "name =~ %$search%";
+		 $where[] = 'or';
+		 $where[] = "description =~ %$search%";
+	}
+	
+	  	
+	$query = $sql->select(array('table' => 'links', 'orderby' => $sort, 'where' => $where, 'limit' => array(($skip ? $skip : 0), $number)));
+    //$users = $newUsers->getUserByNewsIDs($query);
+	$count = $sql->count(array('table' => 'links', 'select' => array('id'), 'where' => $where)) or '';
+	//$pages = getPage($count, $number);
+
+if (empty($action)){
+	echoheader('options', t('Ссылки'));
+?>
+
+<ul id="tabs">
+<li onclick="OpenTab('links', 0)"><?=t('ссылки'); ?> (<?=$count; ?>)</li>
+<li onclick="OpenTab('addlink', 1)"><?=t('добавить ссылку'); ?></li>
+<li onclick="OpenTab('catalogs', 2)"><?=t('каталоги'); ?></li>
+</ul>
+<div class="tab" id="links" style="display: block">
+<table class="panel">
+   <tr>
+<? 
+   if(!empty($count)){
+?>
+
+
+   <form method="post" id="<?=$mod; ?>" name="<?=$mod; ?>" action="<?=$PHP_SELF; ?>">
+   <th>#
+   <th><?=t('Кнопка'); ?>
+   <th><a href="<?=$PHP_SELF;?>?mod=links&order=<?=$order;?>&by=name"><?=t('Краткое название сайта'); ?> <img src="skins/images/DESC.png"></a>
+   <th><a href="<?=$PHP_SELF;?>?mod=links&order=<?=$order;?>&by=author"><?=t('Пользователь'); ?> <img src="skins/images/DESC.png" align="absmaddle"></a>
+   <th><a href="<?=$PHP_SELF;?>?mod=links&order=<?=$order;?>&by=date"><?=t('Добавлен'); ?> <img src="skins/images/DESC.png" align="absmaddle"></a>
+   <th><a href="<?=$PHP_SELF;?>?mod=links&order=<?=$order;?>&by=catalog"><?=t('Категория'); ?> <img src="skins/images/DESC.png" align="absmaddle"></a>
+   <th><?=t('RSS'); ?>
+   <th><input type="checkbox" id="master_box" name="master_box" title="<?=t('Выбрать все'); ?>">
+    <script>
+		$('master_box').observe('change', function(){ //onclick="javascript:ckeck_uncheck_all('<?=$mod; ?>')
+			$$('input[type="checkbox"]').invoke('setValue', this.checked);
+		});
+	</script>
+<?php foreach ($query as $row){ ?>
+   
+  <tr <?=cute_that(); ?>>
+   <td width="25" align="center"><?=$row['id']; ?>
+   <td width="88" align="center"><a href="<?=$row['url']; ?>" target="_blank"><?=($row['banner'] ? '<img align="center" src="'.$row['banner'].'" border="0" width="88" height="31" alt="'.$row['name'].'">' : 'no banner'); ?></a>
+   <td width="500"> &nbsp; <a href="<?=$PHP_SELF; ?>?mod=links&amp;action=editlink&amp;id=<?=$row['id']; ?>"><b><?=$row['name']; ?></b></a>
+   <td width="120" align="center"><a href="<?=$PHP_SELF; ?>?mod=editusers&action=edituser&id=<?=$users[$row['author']]['id']; ?>"><?=$users[$row['author']]['name']; ?></a>
+   <td width="100" align="center"><?=langdate('j.m.Y', $row['date']); ?>
+   <td width="190" align="center"><?=($row['catalog'] ? '<a href="'.$PHP_SELF.'?mod=links&catalog='.$row['catalog'].'">'.$catalogs[$row['catalog']]['name'].'</a>' : 'no catalog'); ?>
+   <td width="35"  align="center"><?=($row['feed'] ? '<a href="#"><img src="skins/images/rss_mini.gif" align="middle"></a>' : '<font size="5" color="red"><b>&#10006;</b></font>'); ?>
+   <td width="25"  align="center"><input name="selected_links[]" value="<?=$row['id']; ?>" type="checkbox">
+<? } ?>
+<tr>
+   <td colspan="8" style="padding: 5px 0">
+  <? if (cute_get_rights('edit_all') or cute_get_rights('delete_all')){ ?>
+   <input type="hidden" name="mod" value="links">
+   <p style="float: right">
+   <select name="action" id="select_for_action">
+      <option value="">Действие</option>
+      <option value="movetocatalog">Изменить каталог</option>
+      <option value="mass_publish">Опубликовать</option>
+      <option value="mass_delete_links">Удалить</option>
+   </select>
+   <input type="submit" value="  <?=t('ок'); ?>  " accesskey="d">
+   </p>
+ <? } ?>
+</form>
+<div class="getPage">
+<?php echo $cute->pagination($count, $number, $skip); ?>
+</div>
+<?php
+	} else echo '<td align="center" style="padding: 20px">'.t(' -- ссылок нет -- ');
+          close_table(); 
+?>
+ </div>
+ <div class="tab" id="addlink" style="display: none">  
+
+    <form method="post" action="<?=$PHP_SELF; ?>" enctype="multipart/form-data">
+	<table class="panel">
+	<tr>
+	<td valign="bottom" height="10">&nbsp;
+	<tr>
+		<td width="150">&nbsp;<?=t('Название сайта'); ?>
+		<td><input size="50" type="text" name="name">
+	<tr> 
+		<td>&nbsp;<?=t('Ваш e-mail'); ?>
+		<td><input size="50" type="text" name="mail">
+	<tr>
+		<td width="150">&nbsp;<?=t('URL сайта'); ?>
+		<td><input size="50" type="text" name="url">
+	<tr>
+		<td>&nbsp;<?=t('RSS-поток <small>(если есть)</small>'); ?>
+		<td><input size="50" type="text" name="feed">
+	<tr> 
+		<td>&nbsp;<?=t('Баннер 88х31'); ?>
+		<td><input size="50" type="text" name="banner">
+	<tr> 
+		<td>&nbsp;<?=t('Баннер 468х60'); ?>
+		<td><input size="50" type="text" name="banner2">
+	<tr> 
+		<td>&nbsp;<?=t('Загрузить файл'); ?>
+		<td><input size="37" type="file" name="addfile" style="border: 1px #CCC olid">
+	<tr>
+		<td>&nbsp;<?=t('Описание сайта'); ?>
+		<td><textarea colspan="300" id="description" name="description"></textarea>
+	<tr> 
+		<td>&nbsp;<?=t('Категория'); ?>
+		<td><?=makeDropDown($catalogs_array, 'catalog', ''); ?>
+	<tr> 
+		<td>&nbsp;<?=t('Действие'); ?>
+		<td>
+			<input type="checkbox" name="publication" <?=($row['publication'] ? 'checked' : ''); ?> id="publication"><label for="publication"><?=t('опубликовать'); ?></label>
+			<input type="checkbox" name="project" <?=($row['project'] ? 'checked' : ''); ?> id="project">&nbsp;<label for="project"><?=t('проекты'); ?></label>
+	<tr>
+        <td>&nbsp;
+        <td height="35">
+         <input type="submit" value="  <?=t('Добавить'); ?>  ">
+         <input type="hidden" name="action" value="addlink">
+         <input type="hidden" name="mod" value="links">
+	</table>
+	</form>
+	
+ </div>
+ <div class="tab" id="catalogs" style="display: none";>
+  <?=catalogs_get_tree(); ?>
+ </div>
+  
+<?
+  echofooter();
+}
+   
+if (isset($action) and $action == 'addlink'){ // Add Link
+
+	if (empty($name) or empty($url)){
+		 header('Location: '.$PHP_SELF.'?mod=links');                   
+		 exit;
+	}
+
+	foreach ($sql->select(array('table' => 'links', 'select' => array('id', 'name', 'url'))) as $row) { 
+		if($name and strtolower($name) == strtolower($row['name'])){
+			msg('error', t('Ошибка'), t('Сайт с таким названием уже есть.'), $PHP_SELF.'?mod=links');
+		} elseif ($url and strtolower($row['url']) == strtolower($url)){
+	        msg('error', t('Ошибка'), t('Сайт с таким адресом уже существует.'), $PHP_SELF.'?mod=links');
+	    }
+    }
+	
+	$allowed_upload = false;
+	//$settings = new PluginSettings('image_manager');
+	//$media_extensions = explode(",", $settings -> settings['media_extensions']);
+	
+    if (isset($_FILES['addfile']) and !$_FILES['addfile']['error']){
+	
+        $ext   = end($ext = explode('.', $_FILES['addfile']['name']));
+        $type  = end($type = explode('/', $_FILES['addfile']['type']));
+        $image = preg_replace('/(.*?).'.$ext.'$/ie', "totranslit('\\1')", $_FILES['addfile']['name']).'.'.$ext;
+
+		@move_uploaded_file($_FILES['addfile']['tmp_name'], $newsicon.'/file/'.$image);              
+		$size = @getimagesize($newsicon.'/file/'.$image);
+                 
+		if ($make_thumb and $size[0] > $make_thumb){                  
+			$kadr = ($square ? 'square' : 'normal');      
+			@img_resize($newsicon.'/file/'.$image, $newsicon.'/file/thumbs/'.$image, $make_thumb, $kadr);
+		}
+    }		  
+    
+	$sql->insert(array(
+	'table'  => 'links',
+	'values' => array(
+             	'date'            => (time() + $config['date_adjust'] * 60),
+                'name'            => trim($name),
+	            'url'             => $url,
+                'catalog'         => $catalog,
+	            'feed'            => $feed,
+	            'banner'          => $banner,
+                'banner2'         => $banner2,
+	            //'author'          => $is_logged_in ? $member['username'] : $name,
+                'description'     => $description,
+	            'publication'     => $publication ? true : false,
+                'project'         => $project ? true : false
+	            )
+	));
+
+	msg('info', t('Добавление ссылки'), t('сайт <b>%name</b> добавлен в каталог <b>"%group"</b>', array('name' => $name, 'group' => $catalogs[$category]['name'])), $PHP_SELF.'?mod=links');
+}
+
+// Edit Link Details
+if ($action == 'editlink'){
+
+	foreach ($query as $row){
+		echoheader('options', t('Редактирование ссылки "%name"', array('name' => $row['name'])));
+?>
+<table class="panel">
+<form method="post" action="<?=$PHP_SELF; ?>"  enctype="multipart/form-data">
+ <tr>
+  <td colspan="2" style="padding-bottom: 10px;"><b><?=t('Общая информация'); ?></b>
+   <tr <?=cute_that(); ?>>
+     <td height="21">&nbsp;&nbsp;<?=t('Название сайта'); ?>
+     <td height="21" width="500"><a href="<?=$row['url']; ?>"><?=$row['name']; ?></a>
+   <tr <?=cute_that(); ?>>
+     <td height="21">&nbsp;&nbsp;<?=t('Пользователь'); ?>
+     <td height="21" width="500"><a href="<?=$PHP_SELF; ?>?mod=editusers&action=edituser&id=<?=$users[$row['author']]['id']; ?>"><?=$users[$row['author']]['name']; ?></a>
+   <tr <?=cute_that(); ?>>
+     <td height="21" width="150">&nbsp;&nbsp;<?=t('Дата регистрации'); ?>
+     <td height="21" width="500"><?=langdate('l, j M Y - h:i', $row['date']); ?>
+   <tr <?=cute_that(); ?>>
+     <td height="21">&nbsp;&nbsp;<?=t('Группа'); ?>
+     <td height="21" width="500"><?=makeDropDown($catalogs_array, 'catalog', $row['catalog']); ?>
+<tr <?=cute_that(); ?>>
+ <td height="21" width="150">&nbsp;&nbsp;<?=t('URL сайта'); ?>
+ <td height="21" width="500"><?=$row['url']; ?>
+<tr>
+ <td colspan="2" style="padding-top: 10px;padding-bottom: 10px;"><b><?=t('Редактирование данных'); ?></b>
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Новое название'); ?>
+ <td height="21" width="500"><input size="50" type="text" name="name" value="<?=$row['name']; ?>"> &nbsp; <?=t('если хотите изменить текущее'); ?>
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('URL сайта'); ?>
+ <td height="21" width="500"><input size="50" type="text" name="url" value="<?=$row['url']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('RSS - поток'); ?>
+ <td height="21" width="500"><input input size="50" type="text" name="feed" value="<?=$row['feed']; ?>"> <img src="skins/images/rss_feed.gif" align="middle" border="0">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Баннер 88 х31'); ?>
+ <td height="21" width="500"><input input size="50" type="text" name="banner" value="<?=$row['banner']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Баннер 468 х 60') ?>
+ <td height="21" width="500"><input input size="50" type="text" name="banner2" value="<?=$row['banner2']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Описание сайта'); ?>
+ <td height="21" width="500">
+  <textarea type="text" name="description" style="width:98%; height:160px;"><?=replace_news('admin', $row['description'])?></textarea>
+<?/*
+if (plugin_enabled('FCKeditorPHP.php')) { 
+run_filters('edit-advanced-options', 'description');
+} else echo '<textarea type="text" name="description" style="width: 320px; height: 120px; padding: 5px; overflow-x: hidden; overflow-y: visible; ">'.replace_news('admin', $row['description']).'</textarea>';
+*/
+?>
+<tr <?=cute_that(); ?>>
+  <td>&nbsp;&nbsp;
+  <td height="25" width="500"><input type="checkbox" name="publication" <?=($row['publication'] ? 'checked' : ''); ?> id="publication"><label for="publication"><?=t('опубликовать'); ?></label>
+&nbsp;<input type="checkbox" name="project" <?=($row['project'] ? 'checked' : ''); ?> id="project">&nbsp;<label for="project"><?=t('проекты'); ?></label> &nbsp; &nbsp;
+<tr <?=cute_that(); ?>>
+  <td>&nbsp;&nbsp;
+  <td height="25" width="500">
+  <input type="submit" value="<?=t('Сохранить'); ?>" accesskey="s">
+  <input type="hidden" name="item" value="<?=$id; ?>">
+  <input type="hidden" name="mod" value="<?=$mod; ?>">
+  <input type="hidden" name="action" value="doeditlink">
+</form>
+
+<? 
+       close_table(); //  конец таблицы
+       echofooter();
+	}
+}
+
+if ($action == 'doeditlink'){ // Do Edit Link
+
+	!empty($item) or msg('error', t('Ошибка'), t('Такой записи не существует.'), $PHP_SELF.'?mod='.$mod);
+
+    $query = $sql->update(array('table' => 'links', 'where' => array("id = $item"), 
+    'values' => array(
+                'name'          => $name,
+	            'url'           => $url,
+                'catalog'       => $catalog,
+	            'feed'          => $feed,
+	            'banner'        => $banner,
+                'banner2'       => $banner2,
+	            'author'        => $member['username'],
+                'description'   => $description,
+	            'publication'   => ($publication ? true : false),
+                'project'       => ($project ? true : false)
+                )
+    ));
+
+    $query ? msg('user', t('Ссылки'), t('Изменения сохранены.'), $PHP_SELF.'?mod=links') : die();
+}
+
+///////////////////////////// Массовое удаление ccылок /////////////////////////////
+
+if ($action == 'mass_delete_links'){
+	if (empty($selected_links)){
+		msg('error', t('Ошибка'), t('Не выбрано ни одной ссылки для удаления.'), $PHP_SELF.'?mod=links'); // error
+	}	echoheader('options', t('Удаление ссылок'));
+?>
+
+	<form method="post" action="<?=$PHP_SELF; ?>">
+	<?=t('Вы уверены, что хотите удалить эти (<b>%count</b>) ссылки ?', array('count' => count($selected_links))); ?><br /><br />
+	<input type="button" value="   <?=t('Нет'); ?>   " onclick="javascript:document.location='<?=$PHP_SELF; ?>?mod=links'"> &nbsp; <input type="submit" value="   <?=t('Да'); ?>   ">
+	<input type="hidden" name="action" value="do_mass_delete_links">
+	<input type="hidden" name="mod" value="links">
+	<?php foreach($selected_links as $linksid){ ?>
+	<input type="hidden" name="selected_links[]" value="<?=$linksid;?>">
+	<?php } ?>
+	</form>
+
+<?php
+	echofooter();
+}
+
+if ($action == 'do_mass_delete_links'){
+	
+	if (empty($selected_links)) {
+		msg('error', t('Ошибка'), t('Не выбрано ни одной ссылки для удаления.'), $PHP_SELF.'?mod=links');
+	}
+
+	$count = count($selected_links);
+	$sql->delete(array('table' => 'links', 'where' => array('id ? ['.join('|', $selected_links).']'), 'limit' => array($count)));
+
+	//if (count($selected_links) == $deleted_links){
+		msg('info', t('Удаление ссылок'), t('Все выбранные Вами ссылки успешно удалены.'), $PHP_SELF.'?mod=links');
+	//}// else {msg('error', t('Удаление  ссылок'), t('Не удалено <b>%deleted</b> из <b>%selected</b> выбраных  ссылок.', array('deleted' => $deleted_links,'selected' => count($selected_links))), $PHP_SELF.'?mod=links');}
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Mass Move to Catalog
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if ($action == 'movetocatalog'){
+
+	if (empty($selected_links)) {
+	    msg('error', t('Ошибка'), t('Не выбрано ни одной ссылки.'), $PHP_SELF.'?mod=links');
+	}   echoheader('options', t('Изменение каталога'));
+?>
+
+<form action="<?=$PHP_SELF; ?>" method="post">
+    <?
+	echo t('Изменить каталог для выбранных (<b>%count</b>) ссылок', array('count' => count($selected_links))); 
+	echo makeDropDown($catalogs_array, 'catalog', '');
+	foreach ($selected_links as $linksid){ ?>
+    <input type="hidden" name="selected_links[]" value="<?=$linksid; ?>">
+    <? } ?>
+    <input type="hidden" name="action" value="domovetocatalog">
+    <input type="hidden" name="mod" value="links">
+    <input type="submit" value="  ок  ">
+</form>
+
+<? echofooter();
+}
+
+if ($action == 'domovetocatalog'){
+
+	if (empty($selected_links)){
+	    msg('error', t('Ошибка'), t('Не выбрано ссылок для изменения каталога.'), $PHP_SELF.'?mod=links');
+	}
+
+	$count 		= count($selected_links);
+    $righ_have  = cute_get_rights('edit_all') or cute_get_rights('edit') ? true : false;
+	$righ_have ? $sql->update(array('table' => 'links', 'where' => array('id = ['.join('|', $selected_links).']'), 'values' => array('catalog' => $catalog), 'limit' => array($count))) : die();
+	
+	/*if (cute_get_rights('edit_all') or (cute_get_rights('edit'))){
+
+		$righ_have = true;
+     } else {
+		$righ_have = false;
+     }*/
+
+    //$query = $sql->select(array('table' => 'links', 'where' => array('id = ['.join('|', $selected_links).']')));
+
+
+    //$moved_links = 0;
+
+    //foreach ($query as $row){
+        //if ($righ_have){
+	        //$sql->update(array('table' => 'links', 'where' => array("id = $row[id]"), 'values' => array('catalog' => $catalog)));
+            //$moved_links++;
+        //}
+    //}
+
+	msg('info', t('Изменение категории'), t('Для <b>%moved</b> из <b>%selected</b> ссылок категория была изменена.', array('moved' => $moved_links, 'selected' => count($selected_links))), $PHP_SELF.'?mod=links');
+}
+
+if ($action == 'mass_publish'){
+	if (empty($selected_links)){
+		msg('error', t('Ошибка'), t('Не выбрано ни одной ссылки для удаления.'), $PHP_SELF.'?mod=links');
+	}     echoheader('options', t('Публикация ссылок'));
+?>
+<form method="post" action="<?=$PHP_SELF; ?>">
+	<?=t('Вы уверены, опубликовать эти (<b>%count</b>) ссылки ?', array('count' => count($selected_links))); ?><br /><br />
+	<input type="button" value="   <?=t('Нет'); ?>   " onclick="javascript:document.location='<?=$PHP_SELF; ?>?mod=links'"> &nbsp; <input type="submit" value="   <?=t('Да'); ?>   ">
+	<input type="hidden" name="action" value="do_mass_publish_links">
+	<input type="hidden" name="mod" value="links">
+	<? foreach($selected_links as $linksid){ ?>
+	<input type="hidden" name="selected_links[]" value="<?=$linksid;?>">
+	<? } ?>
+</form>
+<? 
+echofooter();
+}
+
+if ($action == 'do_mass_publish_links'){
+
+	if (empty($selected_links)) {
+		msg('error', t('Ошибка'), t('Не выбрано ссылок для изменения каталога.'), $PHP_SELF.'?mod=links');
+	}
+	
+	$righ_have = cute_get_rights('edit_all') or cute_get_rights('edit') ? true : false;
+
+    $query = $sql->select(array('table' => 'links', 'where' => array('id = ['.join('|', $selected_links).']')));
+
+
+    $publish_links = 0;
+
+    foreach ($query as $row){
+        if ($righ_have){
+	        $sql->update(array(
+	        'table'  => 'links',
+	        'where'  => array("id = $row[id]"),
+	        'values' => array('publication'  => true)
+	        ));
+
+            $publish_links++;
+        }
+    }
+	msg('info', t('Публикация ссылок'), t('%moved <b>%selected</b> ссылок успешно опубликованны.', array('moved' => $moved_links, 'selected' => count($selected_links))), $PHP_SELF.'?mod=links');
+}
+
+if ($action == 'do_search'){
+
+ $pets = $sql->select(array('table' => 'links', 'select' => array('name')));
+ $names = array();
+ foreach ($pets as $row){
+       $names[] = $row['name']; //Фильтруем $pets в промежуточный массив $names
+ } 
+ $pets = $names; //Получаем "чистый" массив $pets для последующей работы
+
+ $return = array();
+
+ $_POST['search'] = iconv('utf-8', 'cp1251', $_POST['search']);
+ $str = strtolower($_POST['search']);
+ function str_srch($item, $key){ 
+   global $return,$str; 
+   if(strtolower(substr($item, 0, strlen($str))) == $str) 
+     $return[] = $item;
+  }    array_walk($pets,'str_srch');
+
+  if(count($return)>0) echo '<ul><li>'.implode('</li><li>',$return).'</li></ul>';
+    else echo '<span></span>';
+}
+
+?>

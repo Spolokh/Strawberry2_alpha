@@ -1,0 +1,245 @@
+<?php
+// ********************************************************************************
+// List All Available Mailbox + Show Add Mail Form
+// ********************************************************************************
+
+$types = array(t('Входящие'), t('Отправленные'), t('Сохранённые'), t('Черновики'));
+
+$mailId = false;
+$order  = isset($order) ? $order : array('date', 'DESC');
+$number = is_numeric($number) ? $number : 21;
+$action = strtolower(trim($action));
+
+$where  = array();
+
+if ($type == 1):
+	$where[] = "receiver = $member[id]";
+	$where[] = 'and';
+	/*********************/
+	$sortuser = 'sender';
+	
+elseif($type == 2):
+	$where[] = "sender = $member[id]";
+	$where[] = 'and';
+	/*********************/
+	$sortuser = 'receiver';
+else:	
+	$where[] = "receiver = $member[id]";
+	$where[] = 'and';
+	/*********************/
+	$sortuser = 'sender';
+	
+endif;
+
+/*
+switch($type) {
+    case "яблоко":
+        echo "i это яблоко";
+        break;
+    case "шоколадка":
+        echo "i это шоколадка";
+        break;
+    case "пирог":
+        echo "i это пирог";
+        break;
+	default:
+		echo "i не равно 0, 1 или 2";
+}*/
+
+if(isset($boxId)){
+	$where[] = "boxId = $boxId";
+	$where[] = 'and';
+	$mailId  = true;
+}
+
+$where[] = "boxId > 0";
+
+
+$sqlStr = "SELECT * FROM `cute_mailbox` AS mail 
+	JOIN `cute_mailbox AS` user ON $sortuser = `user.id` 
+	WHERE $where
+	ORDER BY `date` DESC
+	LIMIT $skip, $number"
+	;
+
+$query = $sql->select(array('mailbox',
+	'join'    => array('users', 'where'=> "$sortuser = id"), //or receiver
+	//'orderby' => array('date', 'DESC'), 
+	'where'   => $where, 
+	'limit'   => array(($skip ? : 0), $number)
+));
+
+$count = $sql->count(array('mailbox', 'select' => array('boxId'), 'where' => $where));
+
+if(empty($action)):
+	echoheader('emails', t('Почтовые сообщения'));
+?>
+
+	<ul class="tabsmenu vertical" style="float:left;">
+<?php
+	foreach($types as $k => $v):
+	  echo '<li><a href="'.$PHP_SELF.'?mod='.$mod.'&type='.$k.'">'.$v.'</a></li>';
+	endforeach ;
+?>
+	</ul>
+	
+	<form id="<?=$mod?>" method="post" action="<?=$PHP_SELF; ?>">
+	
+	<menu>
+	<input type="button" title="<?php echo t('Проверить')?>" class="get" onclick="window.location='<?=$PHP_SELF?>?mod=<?=$mod?>&action=send'">
+	<input type="button" title="<?php echo t('Написать')?>" class="post" onclick="window.location='<?=$PHP_SELF?>?mod=<?=$mod?>&action=send'">
+	<input type="button" title="<?php echo t('Ответить');?>" class="reply" onclick="window.location='<?=$PHP_SELF?>?mod=<?=$mod?>&action=send'">
+	<input type="button" title="<?php echo t('Ответить всем');?>" class="replyall" onclick="window.location='<?=$PHP_SELF?>?mod=<?=$mod?>&action=send'">
+	<input type="button" title="<?php echo t('Переслать');?>" class="forward" onclick="window.location='<?=$PHP_SELF?>?mod=<?=$mod?>&action=send'">
+	<input type="button" title="<?php echo t('Удалить');?>" class="delete" onclick="window.location='<?=$PHP_SELF?>?mod=<?=$mod?>&action=send'">
+	<input type="button" title="<?php echo t('Найти');?>" class="search" onclick="window.location='<?=$PHP_SELF?>?mod=<?=$mod?>&action=send'">
+	</menu>
+	
+	<table class="panel">
+
+<?php
+
+	require_once classes_directory.'/class.template.php';
+	
+	$tpl =  new template(mails_directory);
+	
+	$tpl->open(($mailId ? 'show' : 'list').'.tpl', $mod) ;
+	$tpl->set_block('HEADER', !reset($query) ? t('У вас нет сообщений') : '', $mod) ;
+	$tpl->set_block(($is_logged_in ? 'LOGGED' : 'NOTLOGGED'), '', $mod) ;
+	
+	foreach($query as $k => $row):
+		
+		if((isset($boxId) and $row['receiver'] != $member['id']) or (isset($boxId) and $row['sender'] != $member['id'])){
+			$count--; 
+			continue;
+		}
+		
+		$k++;
+		$avatar    = $row['avatar'] ? $config['path_userpic_upload'].DS.$row['username'].'.'.$row['avatar'] : 'skins/images/default/no_foto.gif';
+		$boxlink   = $PHP_SELF.'?mod='.$mod.'&boxId='.$row['boxId'];
+		$subject   = $row['subject'] ? $row['subject'] : (strlen($row['message']) >= 60 ? substr($row['message'], 0, 60).'...' : $row['message']);
+		
+		$userlink  = ''; // доработка
+		$navigator = ''; // доработка
+		
+		//$dashcount = substr_count($message, "-----");
+		//$message = str_replace ("-----", "<i style='color:#666;'>", $message);
+		//for($i=0; $i < $dashcount; $i++){
+			//$message .= "</i>";
+		//}	
+				
+		$tpl->set('rows', $k++, $mod);
+		$tpl->set('cute_that', cute_that(), $mod);
+		$tpl->set('boxId', $row['boxId'], $mod);
+		$tpl->set('back', $back, $mod);
+		$tpl->set('boxlink', $PHP_SELF.'?mod='.$mod.'&amp;boxId='.$row['boxId'], $mod);
+		$tpl->set('userlink', $userlink, $mod);
+		$tpl->set('avatar', $avatar, $mod);
+		$tpl->set('date', langdate('d.m.Y - H:i', $row['date']), $mod);
+		$tpl->set('mail', $row['mail'], $mod);
+		$tpl->set('username', $row['name'] ? $row['name'] : $row['username'], $mod);
+		$tpl->set('subject', replace_comment('show', $subject), $mod);
+		$tpl->set('message', str_replace("\n", "<br/>", $row['message']), $mod);
+		$tpl->set('read', $row['read'] ? 'hidd_mail' : 'opp_mail', $mod);
+		$tpl->set('ip', $row['ip'], $mod);
+		$tpl->set('object', ($type ? $types[$type] : $types[0]), $mod);
+	
+		echo $tpl->compile($mod, true);   //вывод контента 
+		
+		//if(!$count) {
+		//$tpl->insert('<p>sdada</p>', '');
+	    ///}
+		
+		if($mailId and $row['read']):
+			$sql->update(array('mailbox', 'where' => array("boxId = $row[boxId]", 'and', "receiver = $member[id]"), 'values' => array('read' => false)));
+		endif;	
+	
+	endforeach;
+	
+	$tpl->full_clear(); 
+?>
+	</table>
+	
+	<input type="hidden" name="boxId" value="<?=$boxId; ?>">
+	<input type="hidden" name="action" value="">
+	</form>
+	<div class="getPage"><?=getPage($count, $number); ?></div>
+
+<?php 
+
+endif;
+
+
+if(isset($action) and $action == 'send'):
+	echoheader('addnews', t('Написать сообщение'));
+?>
+		<form id="sendmail" method="post">
+			<fieldset>
+			<dl>
+			<dt> <?php echo t('Кому:'); ?></dt>
+			<dd>
+			<input style="width:280px;" type="text" id="receiver" name="receiver" placeholder="<?php echo t('Кому'); ?>">
+			<span id="indicator" style="display:none"><img src="/images/loader.white.gif" align="absmiddle"></span>
+		    <div id="usersautocomplete" class="autocomplete"></div>
+			</dd>
+			</dl>
+			<dl>
+			<dt> <?php echo t('Тема сообщения:'); ?></dt>
+			<dd><input style="width:280px;" type="text" name="subject" placeholder="<?php echo t('Тема сообщения'); ?>"></dd>
+			</dl>
+			<dl>
+			<dt><?php echo t('Текст сообщения:'); ?></dt>
+			<dd><textarea style="width:350px; height:80px;" name="message" placeholder="<?php echo t('Текст сообщения'); ?>"></textarea></dd>
+			</dl>
+			<dl>
+			<dt>&nbsp; </dt>
+			<dd><input type="checkbox" name="sendtomail" /> &nbsp; <?php echo t('Отправить на почту?'); ?></dd>
+			</dl>
+			<dl>
+			<dt>&nbsp; </dt>
+			<dd style="padding:5px 0;">
+				<input type="submit" value="<?php echo t(' Отправить '); ?>" />&nbsp; 
+				<input type="reset"  value=" <?php echo t(' Очистить '); ?> " />
+				<input type="hidden" name="action" value="sendmail" />
+				<div id="info"></div>
+			</dd>
+			</dl>
+			<dl>
+			<dt>&nbsp; </dt>
+			<dd style="padding:5px 0;"><?php echo $back; ?></dd>
+			</dl>
+			</fieldset>
+		</form>
+		<script type="text/javascript">
+			new Ajax.Autocompleter('receiver', 'usersautocomplete', 'ajax/ajax.add.citys.php', {
+					minChars:1, indicator:'indicator', paramName: 'receiver' 			  
+			   }
+			);	 
+		</script>
+
+<?php
+
+echofooter();
+
+endif;	
+	
+if(isset($action) and $action == 'sendmail'):
+
+	include classes_directory.'/class.phpmailer.php';
+	
+	$mailer = new PHPMailer; 
+	$mailer->CharSet   = $config['charset'];
+	$mailer->From      = $mail;
+	$mailer->FromName  = $name;
+	$mailer->Sender    = $config['admin_mail'];
+	$mailer->Subject   = $subject;
+	$mailer->Body      = $message;
+	$mailer->AddAddress($config['admin_mail'], "Администратору сайта"); // кому приходит 
+	$mailer->AddReplyTo($mail, $name);
+	$mailer->IsHTML($config['mail_format'] ? true : false);
+	$mailer->Send() or $mailer->ErrorInfo;
+	unset($mailer);
+
+endif;
+	
+?>

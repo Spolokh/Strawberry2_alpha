@@ -1,0 +1,31 @@
+<? echoheader('help', t('Помощь')); ?>
+
+<table border="0" cellpading="0" cellspacing="0" width="654">
+ <tr>
+  <td width="650" valign="middle" colspan="3"><h1><?=t('Помощь и поддержка'); ?></h1>
+ <tr>
+  <td width="31" valign="middle" height="70">&nbsp;
+  <td width="619" valign="middle" colspan="2" align="justify">
+  <?=t('Если у вас возникнут какие-либо вопросы по CuteNews, заходите на <b><a href="http://cutenews.ru/forum/" target="_blank">официальный форум</a></b>.<br />
+   Но перед тем, как публиковать свой вопрос на форуме, ознакомьтесь с <b><a href="%url">документацией по CuteNews</a></b>, входящей в систему.', array('url' => $PHP_SELF.'?mod=help')); ?>
+ <tr>
+  <td>&nbsp;
+ <tr>
+  <td width="650" valign="middle" height="1" colspan="3"><h1><?=t('Автопроверка'); ?></h1>
+ <tr>
+  <td width="31" valign="middle" height="70">&nbsp;
+  <td width="619" valign="middle" colspan="2" align="justify">
+   <?=t('Здесь происходит автоматическая проверка новых версий скрипта. Последняя версия, как всегда, доступна на русском сайте <a href="http://cutenews.ru/" target="_blank">CuteNews</a>.'); ?>
+   <table border="0" cellpading="0" cellspacing="0" width="400">
+    <tr>
+     <td width="300"><b><?=t('Используемая версия:'); ?></b>
+     <td><?=$config['version_name']; ?> <?=$config['version_id']; ?>
+    <tr>
+     <td valign="top"><b><?=t('Последняя доступная версия:'); ?></b>
+     <td width="250"><script language="JavaScript" src="http://cutenews.ru/check.php?version=<?=$config['version_id']; ?>"></script>
+   </table>
+ <tr>
+  <td>&nbsp;
+</table>
+
+<? echofooter(); ?>

@@ -1,0 +1,283 @@
+<?php
+
+if ($config['use_images_uf']){
+	if ((cute_get_rights('edit_all') or cute_get_rights('delete_all')) and array_key_exists('user', $_GET)){
+		$user = totranslit($user);
+	} else {
+		$user = totranslit($member['username']);
+	}
+}
+
+$query_string = cute_query_string($QUERY_STRING, ['action', 'mod', 'image', 'name', 'start_from']);
+$PHP_SELF .= '?mod=images'.$query_string;
+
+$allowed_upload = false;
+$folder = cute_parse_url($config['path_image_upload']);
+$folder = $folder['abs'];
+
+//@mkdir($folder, chmod);
+//@mkdir($folder.'/thumbs', chmod);
+
+if ($config['use_images_uf'] or $user){
+	$folder .= '/'.$user;
+	$config['path_image_upload'].= '/'.$user;
+	//@mkdir($folder, chmod);
+	//@mkdir($folder.'/thumbs', chmod);
+}
+
+if ($action == 'rename' and $image and $name){
+	@rename($folder.'/'.$image, $folder.'/'.$name);
+	//@rename($folder.'/thumbs/'.$image, $folder.'/thumbs/'.$name);
+	header('Location: '.$PHP_SELF);
+}
+
+if ($action == 'remove' and $image){
+	@unlink($folder.'/'.$image);
+	//@unlink($folder.'/thumbs/'.$image);
+	header('Location: '.$PHP_SELF);
+}
+
+if ( $_FILES['image']['name'] ){
+
+
+	$count = count($_FILES['image']['name']);
+	
+	for ($i = 0; $i < $count; $i++) {
+
+	    $ext   = end($ext = explode('.', $_FILES['image']['name'][$i]));
+	    $type  = end($type = explode('/', $_FILES['image']['type'][$i]));
+	    $image = @preg_replace('/(.*?).'.$ext.'$/ie', "totranslit('\\1')", $_FILES['image']['name'][$i]).'.'.$ext;
+
+	    foreach ($allowed_extensions as $allow){
+	    	if (substr($type, -strlen($allow)) == $allow){
+	    		$allowed_upload = true;
+	    	}
+	    }
+
+	    if ((file_exists($folder.'/'.$image) and $overwrite or !file_exists($folder.'/'.$image)) and $allowed_upload){
+	         
+			move_uploaded_file($_FILES['image']['tmp_name'][$i], $folder.'/'.$image);
+
+	        //if ($thumb and $make_thumb){
+	        //    @img_resize($folder.'/'.$image, $folder.'/thumbs/'.$image, $make_thumb);
+	        //}
+	    }
+	}
+
+	header('Location: '.$PHP_SELF);
+}
+
+
+$where  = [];
+$number = $number ?: 21;
+
+$query = $sql->select( ['attach', 'select' => ['id', 'post', 'thumb', 'file', 'width', 'height', 'size'], 'where' => $where, 'orderby' => ['id', 'DESC'], 'limit' => [(isset($skip) ? (int)$skip : 0), $number] ]);
+$count = $sql->count( ['attach', 'where'  => $where] );
+
+if ( !$row = reset($query) ) {
+	die;
+}
+
+if ($area){
+?>
+
+<link href="skins/default.css" rel="stylesheet" type="text/css" media="screen">
+<script language="javascript" type="text/javascript" src="skins/cute.js"></script>
+<script language="javascript" type="text/javascript">
+<!--
+function insertimage(text){
+	text = ' ' + text + ' ';
+	opener.document.forms['addnews'].<?=$area; ?>_story.focus();
+	opener.document.forms['addnews'].<?=$area; ?>_story.value += text;
+	opener.document.forms['addnews'].<?=$area; ?>_story.focus();
+}
+//-->
+</script>
+
+<?php
+} else {
+	echoheader('images', t('Управление картинками'));
+}
+?>
+
+<form action="<?=$PHP_SELF; ?>" method="post" enctype="multipart/form-data">
+ 
+	<table width="100%" class="panel" style="">
+		<caption><?=t('Добавить изображение'); ?></caption>
+		<tr>
+			<td>
+
+<script language="javascript">
+f = 0
+function file_uploader(which){
+if (which < f) return
+    f ++
+    d = document.getElementById('image_'+f)
+    d.innerHTML = '<input type="file" name="image['+f+']" id="image_'+f+'" onchange="file_uploader('+f+');" /><br /><span id="image_'+(f+1)+'">'
+}
+document.writeln('<input type="file" name="image[0]" onchange="file_uploader(0);" /><br />')
+document.writeln('<span id="image_1"></span>')
+</script>
+
+   <label for="overwrite"><input type="checkbox" name="overwrite" id="overwrite"><?=t('Перезаписать, если картинка уже есть?'); ?></label><br />
+   <label for="thumb"><input type="checkbox" name="thumb" id="thumb" onclick="javascript:ShowOrHide('make_thumb')"<?=(!extension_loaded('gd') ? ' disabled' : ''); ?>><?=t('Делать уменьшеную копию?'); ?></label><br />
+   <span id="make_thumb" style="display: none;">
+   <input type="text" name="make_thumb" size="1" maxlength="3" value="100">
+   <b>%</b> <?=t('укажите желаемый размер изображения'); ?><br />
+   </span>
+   <input type="submit" value="<?=t('Загрузить'); ?>">
+</table>
+</form>
+
+<br /><br />
+<table width="100%" class="panel">
+
+    <tr>
+		<th width="25">#
+		<th width="120">File
+		<th width="15">Post
+		<th width="200">Info
+		<th width="">Comment
+		<th width="25">
+<? if (cute_get_rights('edit_all') or cute_get_rights('delete_all')) { ?>
+<!--td align="right" colspan="5">
+<form action="<?//=$PHP_SELF; ?>" method="get">
+<input name="mod" type="hidden" value="images">
+<?//=makeDropDown($usera_arr, 'user', $user); ?>
+<input type="submit" value="  ok  ">
+</form-->
+<? } ?>
+
+<?php
+
+foreach ( $query as $k => $row ) { 
+	
+	//$file = $config['path_image_upload'] .'/posts/'. $row['file'];
+
+	if ( empty($row['thumb']) ) {
+		$row['thumb'] = $row['file'];
+	}
+
+	if ( empty($row['folder']) ) {
+		$row['folder'] = 'Post';
+	}
+
+	if ( strpos ($row['file'], '/uploads/') === FALSE ) {
+		$row['file']  = $config['path_image_upload'] .'/posts'.$row['file'];
+	}
+	if ( strpos ($row['thumb'], "/uploads/thumb.php") === FALSE ) {
+		$row['thumb'] = $config['path_image_upload'] .'/thumb.php?src=/uploads/posts/'.$row['thumb'].'&w=100&h=70';
+	}
+
+	//list($width, $height) = getimagesize($row['file']);
+	?>
+
+	<tr <?=cute_that(); ?>>
+		<td><?=$row['id']?>
+		<td><a title="<?=$row['file']?>"><img src="<?=$row['thumb']?>" alt="<?=$row['file']?>" /></a>
+		<td><?=$row['post']?>
+		<td><?=$row['width']?>x<?=$row['height']?> | <?=($row['size'] ? formatsize ($row['size']) : '') ?>
+		<td>
+		<td><input name="selected_id[]" value="<?=$row['id']?>" type="checkbox" />
+
+
+
+
+<?php }
+/*
+$handle = opendir($folder);
+while ($file = readdir($handle)){
+	if (in_array(strtolower(end(explode('.', $file))), $allowed_extensions)){
+    	$files[$file] = filemtime($folder.'/'.$file);
+    }
+}
+
+if (count($files)){
+	arsort($files);
+
+	$image_per_page = ($image_per_page ? $image_per_page : 21);
+	$start_from = ($start_from ? $start_from : '');
+	$i = $start_from;
+	$j = 0;
+	foreach ($files as $file => $time){
+	    if ($j < $start_from){
+	        $j++;
+	        continue;
+	    }
+
+	    $i++;
+	    $total += filesize($folder.'/'.$file);
+	    $info   = getimagesize($config['path_image_upload'].(file_exists($folder.'/thumbs/'.$file) ? '/thumbs/' : '/').$file);
+
+	    if (file_exists($folder.'/thumbs/'.$file)){
+			$insert = '<a href="'.$config['path_image_upload'].'/'.($user ? $user.'/' : '').$file.'"><img src="{imagepath}'.($user ? '/'.$user : '').'/thumbs/'.$file.'" alt="{title}" border="0" '.$info[3].'></a>';
+	    } else {
+			$insert = '<img src="'.$config['path_image_upload'].'/'.($user ? $user.'/' : '').$file.'" alt="{title}" border="0" '.$info[3].'>';
+	    }
+
+	    $insert = ($area ? '<a href="javascript:insertimage(\''.htmlspecialchars($insert).'\')">'.t('[вставить]').'</a>' : '&nbsp;');
+
+*/
+?>
+
+ <tr <?//=cute_that(); ?> align="center">
+  <td align=center><a href=<?=($config['path_image_upload'].'/'.$file); ?> target=_blank><img src="<?//=$config['path_image_upload'].'/'.$file; ?>" border="0" width="90"></a><br><?=$file; ?>
+  <?=($area ? '<td>'.$insert : ''); ?>
+  <td><?//=(file_exists($folder.'/thumbs/'.$file) ? '<a href="'.$config['path_image_upload'].'/thumbs/'.$file.'">'.t('[уменьшеная]').'</a>' : t('[уменьшеная]')); ?>
+  <td><a href="?mod=images&amp;action=rename&amp;image=<?//=$file.$query_string; ?>" onclick="if (ren=window.prompt('', '<?//=$file; ?>')){window.location.href=this.href+'&name='+ren;}return false;"><?=t('[переименовать]'); ?></a>
+  <td><a href="javascript:confirmDelete('?mod=images&amp;action=remove&amp;image=<?//=$file.$query_string; ?>')"><?=t('[удалить]'); ?></a>
+  <td><?//=$info[0]?>x<?//=$info[1]?> <?//=formatsize(filesize($folder.'/'.$file)); ?>
+
+<?/*
+	    if ($i >= $image_per_page + $start_from){
+	        break;
+	    }
+	}
+
+	if ($start_from > 0){
+	    $previous = $start_from - $image_per_page;
+	    $npp_nav .= '<a href="'.$PHP_SELF.'&amp;start_from='.$previous.'">&lt;&lt;</a>';
+	}
+
+	if (count($files) > $image_per_page){
+	    $npp_nav .= ' [ ';
+	    $enpages_count = @ceil(count($files) / $image_per_page);
+	    $enpages_start_from = 0;
+	    $enpages = '';
+
+	    for ($j = 1; $j <= $enpages_count; $j++){
+	        if ($enpages_start_from != $start_from){
+	            $enpages .= '<a href="'.$PHP_SELF.'&amp;start_from='.$enpages_start_from.'">'.$j.'</a> ';
+	        } else {
+	            $enpages .= ' <b> <u>'.$j.'</u> </b> ';
+	        }
+
+	        $enpages_start_from += $image_per_page;
+	    }
+
+	    $npp_nav .= $enpages;
+	    $npp_nav .= ' ] ';
+	}
+
+	if (count($files) > $i){
+	    $npp_nav .= '<a href="'.$PHP_SELF.'&amp;start_from='.$i.'">&gt;&gt;</a>';
+	}*/
+?>
+
+ <tr>
+  <td><?//=$npp_nav; ?>
+  <td align="right" colspan="5"><br /><br /><?//=t('Общий размер картинок <b>%size</b>', array('size' => formatsize($total))); ?>
+</table>
+
+<div class="pagination pagination-centered">
+	<ul>
+		<?=$cute->pagination($count, $number, $skip); ?>
+	</ul>
+</div>
+
+<?php
+//}
+
+if (!$area){
+	echofooter();
+}

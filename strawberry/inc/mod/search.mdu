@@ -1,0 +1,53 @@
+<?php
+
+// ********************************************************************************
+// List All Available Links + Show Add Links Form
+// ********************************************************************************
+
+$order = ($order == 'DESC' ? 'ASC' : 'DESC');
+	
+if ($order != 'DESC' and $order != 'ASC'){
+   $order   = 'ASC';
+}
+	
+//$by     = $by ? $by : 'id';
+//$sort   = $sort ? $sort : array($by, $order);
+//$number = $number ? $number : 21;
+//$where  = array();
+
+
+$baze = $_GET['baze'];
+
+/*if($search){
+        $search = strtolower($search);
+	$search = htmlspecialchars($search);
+	$search = addcslashes($search, '%_');
+
+        //$where[] = "short =~ %$search%", 'or', "full =~ %$search%";
+        $where[] = "title =~ %$search%";
+        $where[] = 'and';
+}*/
+
+//$where[] = "id > 0";	 
+
+//$query = $sql->select(array('table' => $baze, 'orderby' => $sort, 'where' => $where, 'limit' => array(($skip ? $skip : 0), $number)));
+//$count = sizeof($sql->select(array('table' => 'mailbox', 'orderby' => $sort, 'where' => $where)));
+
+echoheader('search', t('Поиск по сайту'));
+
+//foreach($query as $row){
+
+        //$o  = str_replace('{title}', $row['title'], $o);
+        //$o  = str_replace('{date}', $row['date'], $o);
+        //echo $o;
+
+        //ob_start();
+        include themes_directory.'/'.$config['themes'].'.search.tpl';
+        //$o = ob_get_clean();
+
+        //echo $o;
+//}
+$number = 12; // show search (add-on)
+include rootpath.'/show_search.php';
+echofooter(); 
+?>

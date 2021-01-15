@@ -1,0 +1,123 @@
+<?php
+// ********************************************************************************
+// Options
+// ********************************************************************************
+
+$sec_cat_name = [
+	'tools' => 'Инструменты', 'users' => 'Пользователи', 'options' => 'Глобальные настройки', 'templates' => 'Шаблоны новостей', 'files' => 'Работа с изображениями', 'news' => 'Новости', 'plugins' => 'Настройка плагинов'
+];
+
+$options = [
+	['name' => t('Управление картинками'), 	'url' => 'mod=images', 'category' => 'files'],
+	['name' => t('Блокировка IP'), 			'url' => 'mod=ipban', 'category' => 'tools'],
+	['name' => t('Настройка системы'), 		'url' => 'mod=syscon', 'category' => 'options'],
+	['name' => t('Шаблоны'), 				'url' => 'mod=templates', 'category' => 'templates'],
+ 
+	/*[
+		'name'     => t('Управление галереями'),
+		'url'      => 'mod=gallery',
+		'category' => 'files'
+	],*/
+
+	['name' => t('Категории'), 'url' => 'mod=categories', 'category' => 'tools'],
+	['name' => t('Ссылки'), 'url'  => 'mod=links', 'category' => 'tools'],
+
+	/*[
+		'name' => t('Товары'), 'url' => 'mod=shop', 'category' => 'tools'
+	],
+	[
+		'name' => t('Каталоги'), 'url' => 'mod=catalogs', 'category' => 'tools'
+	],
+	[
+		'name' => t('Мои Сообщения'), 'url' => 'mod=mailbox', 'category' => 'tools'
+	],*/ 
+
+	['name' => t('Гостевая книга'), 'url' => 'mod=guest', 	'category' => 'tools'],
+	['name' => t('Поиск и замена'), 'url' => 'mod=snr', 	'category' => 'tools'],
+	['name' => t('Плагины'), 		'url' => 'mod=plugins', 'category' => 'options'],
+	['name' => t('Резервное копирование'), 'url' => 'mod=backup','category' => 'tools'],
+/*
+	[
+		'name' => t('Добавить новость'), 'url'  => 'mod=addnews', 'category' => 'news'
+	],
+	[
+		'name' => t('Редактировать новость'), 'url'  => 'mod=editnews','category' => 'news'
+	],
+	[
+		'name' => t('Статистика'), 'url' => 'mod=main', 'category' => 'news'
+	],
+*/
+ 	[
+		'name' => t('Личные настройки'), 'url' => 'mod=personal', 'category' => 'users'
+	],
+	[
+		'name' => t('Пользователи'), 'url' => 'mod=editusers', 'category' => 'users'
+	],
+	[
+		'name' => t('Группы пользователей'), 'url' => 'mod=usergroups', 'category' => 'users'
+	],
+	[
+		'name' => t('Импорт'), 'url' => 'mod=import', 'category' => 'tools'
+	],
+];
+
+$options = run_filters('options', $options);
+
+if (!function_exists('cmp_sort_sections')){
+	function cmp_sort_sections ($a, $b) {
+	    if ($a == $b){
+	    	return 0;
+	    }	
+		return ($a > $b ? -1 : 1);
+	}
+}
+
+$count = count($options);
+
+for($i = 0; $i < $count; $i++){
+    $file = explode('=', $options[$i]['url']);
+    $file = explode('&', $file[1]);
+	$file = $file[0];
+
+    if (cute_get_rights($file, 'read')){
+    	$sections[$options[$i]['category']][$options[$i]['name']] = $options[$i];
+    }
+}
+
+uasort($sections, 'cmp_sort_sections');
+
+echoheader('options', t('Настройки'));
+
+$i = 0;
+
+foreach ($sections as $k => $section) {
+
+	$i++;
+	$j = 0;
+
+	asort($section);
+	echo '<ul style="float:left; width:50%; margin-bottom:7px" '.cute_that().'>';
+?>
+     
+<?php
+	foreach ($section as $option){
+
+		if (!$j) {
+?>
+		<h4 style="color:#adadad; padding:14px; font-weight:600">
+			<?=($sec_cat_name[$option['category']] ? $sec_cat_name[$option['category']] : $option['category'])?>
+		</h4>
+<?php			
+	}
+	$j++;
+?>
+	<li style="padding:5px;" title="<?=$option['category']; ?>">
+		<a class="options" href="<?=$PHP_SELF.'?'.$option['url']; ?>">
+			<?=$option['name']; ?>
+		</a>
+	</li>
+<?php } 
+	echo '</ul>';
+}
+
+echofooter();

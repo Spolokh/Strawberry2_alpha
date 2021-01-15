@@ -1,0 +1,57 @@
+<?php
+// ********************************************************************************
+// Plugins
+// ********************************************************************************
+echoheader('options', t('Плагины'));
+
+$available_plugins = available_plugins();
+
+function SortByName($a, $b){
+	return ($a['name'] > $b['name'] ? 1 : -1);
+}
+
+uasort($available_plugins, 'SortByName');
+
+if (isset($_GET['enable'])) {
+    $id = stripslashes($_GET['enable']) - 1;
+    $filename = $available_plugins[$id]['file'];
+    enable_plugin($filename);
+	$result = t('Включён плагин: <b>%plugin</b>', ['plugin' => $available_plugins[$id]['name']]);
+}
+
+if (isset($_GET['disable'])) {
+    $id = stripslashes($_GET['disable']) - 1;
+    $filename = $available_plugins[$id]['file'];
+    disable_plugin($filename);
+    $result = t('Отключён плагин: <b>%plugin</b>', ['plugin' => $available_plugins[$id]['name']]); 
+}
+?>
+
+<table id="plugins1" class="panel">
+    <caption><?=$result; ?></caption>
+    <tr>
+        <th><?=t('Название') ?>
+        <th><?=t('Версия') ?>
+        <th><?=t('Описание') ?>
+        <th><?=t('Автор') ?>
+        <th><?=t('Стат.') ?>
+    </tr>
+<?php
+foreach ($available_plugins as $id => $plugin) {
+    $id      = ($id + 1);
+    $enabled = plugin_enabled($plugin['file']);
+    $class   = ($plugin['compatible'] ? ($enabled ? 'enabled' : 'disabled') : 'incompatible');
+?>
+
+    <tr class="<?=$class; ?>"<?=($plugin['compatible'] ? '' : ' title="Framework: '.$plugin['framework'].'"'); ?>>
+        <td width="170"><?=($plugin['uri'] ?  '<a href="'.$plugin['uri'].'">'.$plugin['name'].'</a>': $plugin['name']); ?>
+        <td width="10"><?=$plugin['version']; ?>
+        <td><?=run_filters('plugin-description', $plugin['description']); ?>
+        <td><?=($plugin['author_uri'] ?  '<a href="'.$plugin['author_uri'].'">'.$plugin['author'].'</a>': $plugin['author']); ?>
+        <td width="50" align="center">
+        <?=($plugin['compatible'] ? ($enabled ? '<a class="green icon-ok" href="?mod=plugins&disable='.$id.'"></a>' : '<a class="red icon-remove" href="?mod=plugins&enable='.$id.'"></a>') : t('Несовместим')); ?>  
+  <? //=($plugin['compatible'] ? ($enabled ? '<a href="?mod=plugins&disable='.$id.'">'.t('Отключить').'</a>' : '<a href="?mod=plugins&enable='.$id.'">'.t('Включить').'</a>') : t('Несовместим')); ?>
+
+<?php } ?>
+</table>
+<?php echofooter(); ?>

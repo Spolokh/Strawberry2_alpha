@@ -1,0 +1,134 @@
+<?php
+// http://spectator.ru/technology/php/simple_XML
+
+function R_untag($string, $tag){
+	while (true){
+	    $start = strpos($string, '<'.$tag, $stop);  //начало тэга
+	     if ($start === false){
+	    	break;
+	     }
+
+	    $start = strpos($string, '>', $start); //начало контента
+	     if ($start === false){
+	            break;
+	     }
+
+	    $start++;
+	    $stop = strpos($string, '</'.$tag.'>', $start);  //конец контента
+	    if ($stop === false){
+	    	break;
+	    }
+
+	    $result[] = substr($string, $start, $stop - $start); //выкусить контент!
+	}
+
+return $result;
+}
+
+function remove_cdata($text){
+
+    if (substr($text, 0, 9) == '<![CDATA['){
+        $text = substr($text, 9);
+        $text = substr($text, 0, -3);
+        $text = trim($text);
+    } else {
+    	$text = unhtmlentities($text);
+    }
+
+        return $text;
+}
+
+$PHP_SELF .= '?mod=import';
+$tags = array('title', 'description', 'pubDate', 'category');
+
+if ($feed = @file_get_contents($_POST['feed'])){
+	preg_match('/\<\?(.*?)encoding=(\"|\')(.*?)(\\2)(.*?)\>/i', $feed, $match);
+
+	foreach ($tags as $tag){
+		foreach (R_untag($feed, 'item') as $item){
+	        if (R_untag($item, $tag)){
+	            $result[$tag][] = R_untag($item, $tag);
+	        }
+
+	        if ($result[$tag]){
+	            $result[$tag] = @array_reverse($result[$tag]);
+	        }
+	    }
+   	}
+
+    if (is_array($result)){
+	    $id = ($sql->last_insert_id('news', '', 'id') + 1);
+
+	    for ($i = 0; $i < count($result['title']); $i++){
+	        foreach ($tags as $tag){
+	        	if ($result[$tag][$i]){
+	                    $result[$tag][$i] = join(',', $result[$tag][$i]);
+	                    $result[$tag][$i] = remove_cdata($result[$tag][$i]);
+
+	                if (strtolower($config['charset']) != strtolower($match[3])){
+	                    $result[$tag][$i] = iconv($match[3], $config['charset'], $result[$tag][$i]);
+	                }
+	            }
+	        }
+
+            $sql->insert(array(
+            'table'  => 'news',
+            'values' => array(
+            	         'id'      => ($id + $i),
+                        'date'     => ($result['pubDate'][$i] ? strtotime($result['pubDate'][$i]) : time),
+                        'author'   => $member['username'],
+                        'category' => $category,
+                        'title'   => replace_news('add', $result['title'][$i]),
+	                    //'url'     => namespace(totranslit($result['title'][$i])),
+	                    'hidden'  => cute_get_rights('approve_news'),
+                        'short'   => strlen(replace_news('add', $result['description'][$i])),
+                        'full'    => '0'
+                        )
+            ));
+
+            $sql->insert(array(
+            'table'   => 'story',
+            'values'  => array(
+                         'post_id' => ($id + $i),
+                         'short'   => replace_news('add', $result['description'][$i]),
+                         'full'    => ''
+                         )
+            ));
+	    }
+
+	    msg('info', t('Импорт'), t('Посты (<b>%count</b>) из выбранного вами фида были успешно импортированны.', array('count' => $i)), $PHP_SELF);
+	}
+} else {
+	echoheader('options', t('Импорт'));
+
+	$categories_list = category_get_tree('&nbsp;', '<option value="{id}">{prefix}{name}</option>');
+?>
+
+<div align="justify" class="panel"><?=t('Тестировалось только на RSS и RDF, а Atom идёт лесом.<br /><br />
+<b>Внимание!</b> Категорически запрещается использовать данный модуль для кражи контента!!! Если вы такой умный, то напишите граббер сам или купите готовый. В противном случае идите нахуй. Спасибо.'); ?></div>
+<br /><br />
+<form action="<?=$PHP_SELF; ?>" method="post">
+<?=t('УРЛ фида (например: http://strawberry.goodgirl.ru/rss.xml)'); ?><br />
+<input name="feed" type="text" value="" style="width: 200px;"><br />
+<? if ($categories_list){ ?>
+<?=t('Категория'); ?><br />
+<select name="category">
+<option value=""> </option>
+<?=$categories_list; ?>
+</select><br />
+<? } ?>
+
+<!--
+<label for="getcategories"><input id="getcategories" name="getcategories" type="checkbox" value="on">&nbsp;<?=t('Импортировать категории?'); ?></label><br />
+<? if ($categories_list){ ?>
+<label for="subcategories"><input id="subcategories" name="subcategories" type="checkbox" value="on">&nbsp;<?=t('Делать категории из фида субкатегориями выбранной категории?'); ?></label><br />
+<? } ?>
+-->
+
+<br /><input type="submit" value="<?=t('Поехали'); ?>">
+</form>
+
+<?
+	echofooter();
+}
+?>

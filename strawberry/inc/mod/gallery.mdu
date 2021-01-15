@@ -1,0 +1,266 @@
+<?php
+// ********************************************************************************
+// List All Available Gallery + Show Add Gallery Form
+// ********************************************************************************
+ 
+//session_start();
+//$_SESSION['file_info'] = array();
+
+$folder = cute_parse_url($config['path_image_upload']);
+$folder = $folder['abs'].'/Gallery';
+
+if (empty($number)){
+	$number = 7;
+}
+
+$where = array(); 
+      
+if (isset($id)){
+	$where[] = "post_id = $id";
+}   
+
+$query = $sql->select(array('table' => 'attach', 'where' => $where));
+$count = $sql->count(array('table' => 'attach', 'where' => $where));
+
+if (empty($action)){
+	echoheader('images', t('Управление галереями')); 
+?>
+
+<style>
+/* Horizontal Carousel */
+#horizontal_carousel  /*float:left; border: 1px solid red; -moz-border-radius: 8px; -webkit-border-radius: 8px; border-radius: 8px;*/
+      {width:100%; height:110px;  position:relative;}         
+#horizontal_carousel .container /*width: 1080px; border:1px solid #CCC;*/ 
+	{top:0; left:20px; right:20px; height:110px; overflow:hidden; position:absolute;}            
+#horizontal_carousel .previous_button  /*height:50px; background:url(images/c_prev.gif) -5px 10px no-repeat*/
+	{top:0; left:0;bottom: 0; width:30px; padding:35px 0; color:#446488; font-size: 36px; z-index:100; cursor:pointer; position:absolute; text-align:center;}
+#horizontal_carousel .previous_button_disabled 
+	{color:#CCC; cursor:default;}
+#horizontal_carousel .next_button  /*height:50px;*/ 
+	{top:0; right:0; bottom: 0; width:30px; padding:35px 0; color:#446488; font-size: 36px; z-index:100; cursor:pointer; position:absolute; text-align:center;}   
+#horizontal_carousel .next_button_disabled /*background: url(images/c_next.gif) -5px 10px  no-repeat*/ 
+	{color:#CCC; cursor:default;}
+#horizontal_carousel ul 
+	{top:0; left:0; height:120px; width:100000px; position:relative;}                      
+#horizontal_carousel ul li 
+	{float:left; color:white; padding:4px;}
+#horizontal_carousel ul li a 
+	{z-index:1; width:150px; height:100px; color:white; opacity:0.75; display:block; overflow:hidden; position:relative;} 
+#horizontal_carousel ul li a:hover /*overflow:visible;*/
+	{opacity:1; z-index:10;}		
+#horizontal_carousel ul li img  /*top:-5px; left:-5px; position:absolute;*/
+	{
+	float:left; 
+	padding:1px;
+	width:150px;
+	height:100px; 
+	border:1px solid #999; 
+	
+	transform:scale(0.90);
+	-webkit-transform:scale(0.90); 		
+	-moz-transform:scale(0.90); 		
+	-o-transform:scale(0.90); 		
+	
+	-webkit-transition-duration:0.3s;/*Webkit: длительность анимации*/
+	-moz-transition-duration:0.3s; 	/*Mozilla: длительность анимации*/
+	-o-transition-duration:0.3s; 	/*Opera: длительность анимации*/
+	}   
+	
+#horizontal_carousel ul li a:hover img /*border:1px solid white;*/
+	{ 
+	z-index:10;
+	transform:scale(1.0);
+	-webkit-transform:scale(1.0); 	/*Webkit: увеличиваем размер до 1.2x*/
+	-moz-transform:scale(1.0); 		/*Mozilla: масштабирование*/
+	-o-transform:scale(1.0); 		/*Opera: масштабирование*/
+	}
+	
+/************imgContainer*************/	
+#imgContainer	
+	{width:100%; height:auto; padding:1px; margin:10px auto; text-align:center; position:relative; border:1px solid #CCC;}
+#imgContainer img
+	{width:auto; max-width:100%; height:auto;}
+#imgContainer details#toggle /*opacity:0.4;*/ 
+	{top:-1px; left:-1px; z-index:10; min-width:370px; width:auto; padding:14px; position:absolute; text-align:left; background:#f7f7f7; border:1px solid #CCC;}
+#imgContainer details#toggle:hover 
+	{opacity: 1; box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);}
+
+summary
+	{padding:0 0 3px; width:80%; cursor:pointer; position:relative;}
+#imgContainer details#toggle #handle
+	{right:10px; top:10px; cursor:pointer; position:absolute;}
+	
+</style>
+
+	<!--<h1><?//=$post['title'];?></h1>-->
+	<div id="imgContainer">
+		<img id="imgSrc" src="http://nordeuropa.info/strawberry/data/upimages/<?=$post['image'];?>" width="" height="" />
+	    
+		<details id="toggle">
+		<span id="handle" class="icon-move"></span>
+		<summary><?=t('Редактировать')?></summary>
+			<p id="working"></p>
+			<form method="post" id="readImage">
+				<!--<dl>
+					<dt for="x1">x1:</dt>
+					<dd><input type="text" name="x1" id="x1" />
+				</dl>
+				<dl>
+					<dt for="y1">y1:</dt>
+					<dd><input type="text" name="y1" id="y1" />
+				</dl>-->
+				<dl>
+					<textarea name="description" id="description" style="width:333px; height:70px;"></textarea>
+				</dl>
+				<dl>
+					<dt><?=t('Длинна')?>:</dt>
+					<dd><input style="padding:2px;"  oninput="$('otherWidth').value = this.value;" type="range" name="width" id="width" value="0" max="" />
+						&nbsp; <output name="thisWidth" for="width"></output>
+					</dd>
+				</dl> 
+				<dl>
+					<dt><?=t('Высота')?>:</dt>
+					<dd><input style="padding:2px;" oninput="$('otherHeight').value = this.value" type="range" name="height" id="height" value="0" max="" />
+						&nbsp; <output name="thisHeight" for="height"></output>
+					</dd>
+				</dl>
+				<dl>
+					<dt>width / height:</dt>
+					<input type="Int" size="3" maxlength="4" name="otherwidth" id="otherWidth" /> &nbsp; Х &nbsp; 
+					<input type="Int" size="3" maxlength="4" name="otherheight" id="otherHeight" />
+				</dl>
+				<dl>
+					<dt><?=t('Сделать главной'); ?> <input name="main" type="checkbox" value="1" /></dt>
+					
+					<input type="hidden" name="image" id="image" value="<?=$post['image']; ?>" />
+					
+					<input type="hidden" name="id" id="post" value="<?=$post['id']?>" />
+					<input type="hidden" name="action" value="doeditimage" />
+					<input type="hidden" name="mod" value="gallery" />
+					<input type="submit" accesskey="s" value="  <?=t('Редактировать')?>  " />
+				</dl>
+			</form>
+		</details>
+	</div>
+
+	<? if($count > 1){ ?>
+
+	<div id="horizontal_carousel">
+		<div class="previous_button icon-caret-left"></div>
+			<div class="container">	
+				<ul>
+				<? foreach ($query as $row) { ?>
+					<li><a id="<?=$row['id'];?>"
+					data-width="<?=$row['width'];?>"
+					data-image="<?=$row['file'];?>"
+					data-height="<?=$row['height'];?>"
+					data-title="<?=$row['description'];?>"
+					href="<?=$config['path_image_upload'] ?>/Gallery/<?=$row['file'];?>"><img src="http://nordeuropa.info/strawberry/thumb.php?src=<?=$config['path_image_upload'] ?>/Gallery/<?=$row['file'];?>&w=150&h=100&q=80" /></a></li>
+				<? } ?>
+				</ul>
+			</div>
+		<div class="next_button icon-caret-right"></div>
+	</div>
+	<? } ?>
+	
+	<script type="text/javascript">
+	$(document).observe("dom:loaded", function(){
+		
+		new UI.Carousel("horizontal_carousel");
+		new Draggable('toggle',{scroll:window, handle:'handle'});
+
+		$$('#horizontal_carousel a').each(function(a) { //a.hide();
+			
+			a.observe('click', function(e){
+			    
+				e.stop(); 
+				$('working').update();
+				$('description').update(); 
+	
+				$('image').setValue(this.dataset.image); 
+				$('description').update(this.dataset.title); 
+				
+				$('width').writeAttribute({max: this.dataset.width}).setValue(this.dataset.width);
+				$('height').writeAttribute({max: this.dataset.height}).setValue(this.dataset.height);
+				
+				$('imgSrc').writeAttribute({
+					src: this.href, width: this.dataset.width, height: this.dataset.height
+				});
+				
+			}.bindAsEventListener(a));
+		});
+		
+		$('otherWidth').observe('input', function(){ //$('width').value  = this.value;
+			$('width').setValue(this.value);
+		});	
+		
+		$('otherHeight').observe('input', function(){
+			$('height').setValue(this.value); //$('height').value = this.value;
+		});
+		
+		$('readImage').observe('submit', function(e){	
+			e.stop();
+			new Ajax.Request('<?=$PHP_SELF; ?>', {
+				parameters: this.serialize(), 
+				onCreate: showLoad, 
+				onFailure: function(transport){
+					$('working').update("Incorrect Request");
+				},
+				onComplete: function(transport){
+					$('working').update(transport.responseText);
+				}
+			});
+		});
+	});
+	
+	function showLoad(){
+		$('working').update('loading...'); //update('<p class="working">loading...</p>');
+	}
+	
+	function onEndCrop(coords, dimensions){
+		/*$('x1').value     = coords.x1;
+		$('y1').value     = coords.y1;
+		$('x2').value     = coords.x2;
+		$('y2').value     = coords.y2;
+		$('width').value  = dimensions.width;
+		$('height').value = dimensions.height;*/
+	}
+    </script>
+<?
+	echofooter();
+}
+
+if(isset($action) and $action == 'doeditimage'){
+	
+	!empty($_POST) or die("No POST");
+	
+	foreach($_POST as $k => $v){
+		$$k = iconv("UTF-8", $config['charset'], $v);
+	}
+	
+	!empty($image) or die('No Image');
+	
+	$values = array();
+	
+	if ($main and $id){ //echo $main ? $image : "FALSE";
+		$sql->update(array('table' => 'news', 'where' => array("id = $id"), 'values' => array('image' => $image)));
+	}
+	
+	//echo $id .'/'. $image;
+	if(!empty($width)){
+		$values['width']  = intval($width);
+	}
+	
+	if(!empty($height)){
+		$values['height'] = intval($height);
+	}
+	
+	$values['description'] = $cute->value($description);
+	
+	if (!$sql->update(array('table' => 'attach', 'where' => array("id=$image"), 'values' => $values))){
+		die('No Request');
+	} 
+	
+	echo t('Отредактированно!');
+}
+?>

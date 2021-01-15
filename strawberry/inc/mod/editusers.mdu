@@ -1,0 +1,360 @@
+<?php
+// ********************************************************************************
+// List All Available Users + Show Add User Form
+// ********************************************************************************
+
+ 
+$id     = isset($_POST['id'])? (int)$_POST['id'] : (isset($_GET['id'])? (int)$_GET['id'] : 0);
+$by     = $by    ?: 'id';
+//$user 	= '';
+$order  = $order ?: 'ASC';
+$skip   = isset($skip) ? (int)$skip : 0;
+$where  = ['id <> 0'];
+$offset = '';
+$number = isset($number)? $number : ($config['users_number']?: 21);
+$action = isset($_POST['action']) ? $_POST['action'] : null;
+
+if ( !empty($user) ) {
+    $where[] = 'and';
+	$where[] = "id = $user";
+}
+	
+$query = $sql->select(['users', 'where' => $where, 'orderby' => [$by, $order], 'limit' => [$skip, $number]]);
+
+if (!$row = reset($query)) {
+	msg('error',  t('Пользователи'), t('Каталог пустой.'));
+}
+
+$count = $sql->count (['users', 'select' => ['id'], 'where' => $where]);	
+
+include_once languages_directory .DS. $config['language'] . '/country.inc.php';
+
+$groups_select[0] = t('Выбрать группу ...');
+
+foreach ($usergroups as $k => $group) 
+{
+	$groups_select[$group['id']] = $group['name'];
+}
+
+if (empty($action) and empty($user))
+{
+	echoheader( 'users', t('Пользователи') );
+?>
+
+<ul id="tabs">
+	<li><a href="#alluser"><?=t('Все пользователи') ?></a></li>
+	<li><a href="#adduser"><?=t('Добавить пользователя') ?></a></li>
+</ul>
+
+<div id="alluser" class="tab">
+	<form id="editusers" name="editusers" method="post" action="<?=$PHP_SELF ?>">
+	<table class="panel">
+	<!--caption><b><?//=t('Все пользователи') ?></b></caption-->
+	<thead>
+		<tr>
+			<th>#
+			<th><?=t('Аватар')?>
+			<th><?=t('Имя пользователя')?>
+			<th width="100" align="left"><?=t('Местоположение')?>
+			<th width="120" align="left"><?=t('Дата регистрации')?>
+			<th width="120" align="left"><?=t('Последний визит')?>
+			<th><?=t('Публикаций')?>
+			<th width="100" align="left"><?=t('Группа')?>
+			<th width="15"><label class="option">
+					<input type="checkbox" name="master_box" title="<?=t('Выбрать все'); ?>" onclick="javascript:ckeck_uncheck_all('<?=$mod; ?>')">
+					<span class="checkbox"></span>
+				</label>
+	</thead>
+	<tbody>
+<?php foreach ($query as $k => $row) { ?>
+	<tr <?=cute_that(); ?>>
+		<td width="15" align="center"><?=$row['id']; ?>
+		<td width="50" align="center"><img style="vertical-align: middle; border-radius:100%" class="avatar25" width="33" src="<?=$config['path_userpic_upload']?>/<?=($row['avatar']? $row['username'] .'.'. $row['avatar'] : 'default.png')?>" />
+		<td width="150" align="center"><a href="<?=$PHP_SELF; ?>?mod=editusers&amp;user=<?=$row['id'];?>" title="Редактировать"><?=($row['deleted']?'<s>':'')?><?=$row['name'] ? $row['name'] : $row['username']; ?><?=($row['deleted']?'</s>':'')?></a>
+		<td>
+			<img style="width: 33px;margin-bottom:3px; vertical-align: middle;" src="/themes/flags/ico/Russia.ico" /> 
+			<span><?=$_country_lang["ru"]?></span>
+		<td><?=langdate('j.m.Y-H:i:s', $row['date']); ?>
+		<td><?=($row['last_visit'] ? langdate('j.m.Y-H:i:s', $row['last_visit']) : ''); ?>
+		<td width="50" align="center"> <?=$row['publications']; ?>
+		<td><?=$usergroups[$row['usergroup']]['name']; ?>
+		<td align="center">
+			<label class="option">
+				<input type="checkbox" name="selected_users[]" value="<?=$row['id']; ?>" />
+				<span class="checkbox"></span>
+			</label>
+	</tr>
+<?php } ?>
+    </tbody>
+	<tfoot>
+		<tr>
+			<td colspan="9" height="20" align="right">
+				<input type="hidden" name="mod" value="<?=$mod ?>"/>
+				<input type="hidden" name="action" value="mass_delete_users"/>
+				<input type="submit" value=" <?=t('OK'); ?> " accesskey="d"/>
+				<div class="pagination pagination-centered">
+					<ul><?=$cute->pagination($count, $number, $skip)?></ul>
+				</div>
+	</tfoot>
+	</table>
+	</form>
+</div>
+
+<div id="adduser" class="tab">
+    
+	<form method="post" action="<?=$PHP_SELF?>">
+	<table class="panel">
+		<tr <?=cute_that(); ?>>
+			<td width="200"> &nbsp; <?=t('Имя') ?>
+			<td><input size="40" type="text" name="regnickname" placeholder="" required />
+		<tr <?=cute_that(); ?>>
+			<td width="200"> &nbsp; <?=t('Логин') ?>
+			<td><input size="40" type="text" name="regusername" placeholder="" required />	
+		<tr <?=cute_that(); ?>>
+			<td width="200"> &nbsp; <?=t('Пароль') ?>
+			<td><input size="40" type="text" name="regpassword" placeholder="" required />	
+		<tr <?=cute_that(); ?>>
+			<td width="200"> &nbsp; <?=t('E-mail') ?>
+			<td><input size="40" type="email" name="regemail" placeholder="" required />
+		<tr <?=cute_that(); ?>>
+			<td width="200"> &nbsp; <?=t('Группа') ?>
+			<td><?=makeDropDown($groups_select, 'regusergroup')?>
+		<tr <?=cute_that(); ?>>
+			<td width="200"> &nbsp; <?=t('Скрытый ?') ?>
+			<td><?=makeDropDown(['Нет','Да'], 'hidden', $hidden); ?>
+		<tr <?=cute_that(); ?>>
+			<td width="200"> &nbsp; <?=t('Действие') ?>
+			<td><input type="submit" value="  <?=t('Добавить')?>  ">
+				<input type="hidden" name="action" value="adduser">
+				<input type="hidden" name="mod" value="editusers">
+	</table>
+	</form>	
+</div>
+<?php echofooter(); } 
+
+if ( isset($mod, $action) and $action == 'adduser' ) { // Add User
+
+	if (empty ($regusername) OR empty ($regpassword)) {
+		header('Location: '.$PHP_SELF.'?mod=editusers');
+		exit;
+	}
+
+	foreach ($sql->select(['users', 'select' => ['id', 'username', 'mail'], 'where' => $where]) AS $row){
+		
+		if ($regusername and strtolower($regusername) == strtolower($row['username'])) {
+			msg('error', t('Ошибка'), t('Пользователь с таким логином уже есть.'), $PHP_SELF.'?mod=editusers');
+		} elseif ($regemail and strtolower($regemail) == strtolower($row['mail'])) {
+			msg('error', t('Ошибка'), t('Пользователь с таким e-mail`ом уже есть.'), $PHP_SELF.'?mod=personal');
+		}
+	}
+	
+	$values = [
+		'date'      => (time() + $config['date_adjust'] * 60),
+		'usergroup' => $regusergroup,
+		'username'  => $regusername,
+		'password'  => md5x($regpassword),
+		'name' => $regnickname,
+		'mail' => $regemail,
+		'deleted' => $hidden ? 1 : 0
+	];
+	
+	$sql->insert(['users', 'values' => $values]);
+	msg('info', t('Добавление пользователя'), t('<b>%user</b> добавлен в группу <b>"%group"</b>', ['user' => ($regnickname ? $regnickname : $regusername), 'group' => $usergroups[$regusergroup]['name']]), $PHP_SELF.'?mod='.$mod);
+}
+
+// ********************************************************************************
+// Edit User Details
+// ********************************************************************************
+if ( empty($action) and isset($user) and $user != '')
+{	
+	echoheader('user', t('Редактирование пользователя %user', ['user' => ($row['name'] ? $row['name'] : $row['username'])]));
+
+    if ($config['user_avatar']) {
+		if ($row['avatar']){
+			$row['avatar'] = '<img src="'.$config['path_userpic_upload'].'/'.$row['username'].'.'.$row['avatar'].'" style="margin: 5px; border: 0px;">';
+			$delava = '<input type="checkbox" name="delavatar" id="delavatar">&nbsp;<label for="delavatar">'.t('Удалить аватар?').'</label>';
+		} else {
+			unset($row['avatar'], $delava);
+		}
+
+	        $showrow_avatar = '<tr '.cute_that().'><td height="21">&nbsp;&nbsp;'.t('Аватар').':<td height="21"><input type="hidden" name="max_file_size" value="110000"><input tabindex="6" name="newavatar" type="file" size="27"></td><td>'.$delava;
+	} else {
+		unset($row['avatar']);
+	}	
+?>
+
+<form method="post" action="<?=$PHP_SELF; ?>" enctype="multipart/form-data">
+<table cellspacing="0" cellpadding="0" class="panel">
+	<caption><?=t('Общая информация'); ?></caption>
+	<tr <?=cute_that(); ?>>
+		<td width="200"> &nbsp; <?=t('Логин'); ?>
+		<td colspan="2"><input type="text" size="40" value="<?=$row['username']; ?>" disabled /> &nbsp; <?=t('Не меняется');?>
+	<tr <?=cute_that(); ?>>
+		<td width="200" > &nbsp; <?=t('Дата регистрации') ?>
+		<td><input type="text" size="40" value="<?=langdate('l, j M Y - h:i', $row['date']); ?>" disabled />
+	<tr <?=cute_that(); ?>>
+		<td> &nbsp; <?=t('Имя'); ?>
+		<td colspan="2"><input type="text" size="40" name="editnickname" value="<?=$row['name']; ?>">	
+	<tr <?=cute_that(); ?>>
+		<td> &nbsp; <?=t('E-mail'); ?>
+		<td><input type="email" size="40" name="editmail" value="<?=$row['mail']; ?>" required /> 
+	<tr <?=cute_that(); ?>>
+		<td> &nbsp; <?=t('Новый пароль'); ?>
+		<td><input type="text" size="40" name="editpassword" placeholder="<?=t('Если хотите изменить текущий') ?>" />
+	<tr <?=cute_that(); ?>>
+		<td> &nbsp; <?=t('Группа'); ?>
+		<td><?=makeDropDown($groups_select, 'editusergroup', $row['usergroup']); ?>
+	<tr <?=cute_that(); ?>>
+		<td> &nbsp; <?=t('Заблокировать') ?>
+		<td>
+			<input type="checkbox" name="editdeleted" <?=($row['deleted']? 'checked' : '')?> />
+	<tr <?=cute_that(); ?>>
+		<td> &nbsp; <?=t('Действие') ?>
+		<td><input type="submit" value="<?=t('Сохранить'); ?>" accesskey="s">
+			<input type="hidden" name="mod" value="editusers">
+			<input type="hidden" name="user" value="<?=$user ?>">
+			<input type="hidden" name="action" value="doedituser">
+	</table>
+</form>
+<?php echofooter(); 
+}
+
+// ********************************************************************************
+// Do Edit User
+// ********************************************************************************
+if ( isset ($mod, $action) and $action == 'doedituser' ){
+
+	!empty ($user) or exit("Нет такого пользователя");
+	
+	if ($editmail and !filter_var($editmail, FILTER_VALIDATE_EMAIL)){ 
+		exit(t('Извините, этот e-mail неправильный.'));
+ 	}
+	
+	if ( !empty($editpassword) ){
+		$row['password'] = md5x($editpassword);
+		$_SESSION['md5_password'] = $row['password'];
+		cute_setcookie('md5_password', $row['password']);
+	}
+
+	//$userpic_folder = cute_parse_url($config['path_userpic_upload']);
+	//$userpic_folder = $userpic_folder['abs'];
+	
+	$values['name']      = replace_comment('add', $editnickname);
+	$values['mail']      = $editmail;
+	$values['deleted']   = $editdeleted ? true : false;
+	$values['usergroup'] = $editusergroup;
+	$values['password']  = $row['password'];
+    $sql->update( ['users', 'where' => $user, 'values' => $values] );
+
+    msg('user', t('Пользователи'), t('Изменения сохранены.'), $PHP_SELF.'?mod='.$mod);
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ Массовое удаление пользователей
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+if (isset($action) and $action == 'mass_delete_users') {
+	if ( empty($selected_users) ){
+		msg('error', t('Ошибка'), t('Не выбрано ни одного пользователей для удаления.'), $PHP_SELF.'?mod=editusers');
+	} 
+	
+	echoheader('options', t('Удаление пользователей'));
+?>
+
+<form method="post" action="<?=$PHP_SELF; ?>">
+	<table border="0" cellpading="0" cellspacing="0" width="100%" height="100%">
+	<tr>
+		<td>
+			<?=makeDropDown([
+				'do_mass_activate_users' => t('Активировать'),
+				'do_mass_blocked_users'  => t('Блокировать'),
+				'do_mass_delete_users'   => t('Удалить')], 'action') ?>
+			<br/>
+			<?=t('Вы уверены, что хотите удалить этих(<b>%count</b>) пользователей?', ['count' => count($selected_users)]); ?><br /><br />
+			<input type="button" value="   <?=t('Нет'); ?>   " onclick="javascript:document.location='<?=$PHP_SELF; ?>?mod=editusers'"> &nbsp; 
+			<input type="submit" value="   <?=t('Да'); ?>   ">
+			<input type="hidden" name="mod" value="editusers">
+
+<?php foreach( $selected_users as $userid ){
+			echo '<input type="hidden" name="selected_users[]" value="'.$userid.'">';
+		}
+?>
+</table>
+</form>
+<?php echofooter(); }
+
+if ( isset($action) and $action == 'do_mass_activate_users' ){
+	$righ_have = (!cute_get_rights('approve_news') and cute_get_rights('edit_all')) ? true : false;
+	
+	if ( !$righ_have ){
+		exit ('Действие запрещено'); 
+	}
+	
+	if ( empty($selected_users) ){
+		msg('error', t('Ошибка'), t('Не выбрано ни одного пользователей для удаления.'), $PHP_SELF.'?mod='.$mod);
+	}
+	
+	if (!$count = $sql->count(['users', 'where' => ['id IN ('.join(', ', $selected_users).')']])){
+		exit ('Выбранные Вами записи не найдены');
+	}
+	
+	$sql->update(['users', 'where' => ['id IN ('.join(', ', $selected_users).')'], 'values' => ['deleted' => false]]);
+    
+	if ($count == $deleted_users){
+		msg('info',  t('Активация пользователей'), t('Все выбранные Вами пользователи активированны.'), $PHP_SELF.'?mod=editusers');
+	} else {
+		msg('error', t('Активация пользователей'), t('Активированны <b>%deleted</b> из <b>%selected</b> выбраных пользователей.', ['deleted' => $count,'selected' => count($selected_users)]), $PHP_SELF.'?mod='.$mod);
+	}
+}
+
+if ( isset($action) and $action == 'do_mass_blocked_users' ){
+	
+	$righ_have = (!cute_get_rights('approve_news') and cute_get_rights('edit_all')) ? true : false;
+	
+	if (!$righ_have) {
+		exit ('Действие запрещено'); 
+	}
+	
+	if (empty($selected_users))
+	{
+		msg('error', t('Ошибка'), t('Не выбрано ни одного пользователя.'), $PHP_SELF.'?mod='.$mod);
+	}
+	
+	if (!$count = $sql->count(['users', 'where' => ['`id` IN ('.join(', ', $selected_users).')']]))
+	{
+		exit ('Выбранные Вами записи не найдены');
+	}
+	
+	$sql->update(['users', 'where' => ['`id` IN ('.join(', ', $selected_users).')'], 'values' => ['deleted' => true]]);
+
+	if ($count  == $deleted_users){
+		msg('info', t('Блокировка пользователей'), t('Все выбранные Вами пользователи заблокированны.'), $PHP_SELF.'?mod=editusers');
+	} else {
+		msg('error', t('Блокировка пользователей'), t('Блокированны <b>%deleted</b> из <b>%selected</b> выбраных пользователей.', ['deleted' => $count,'selected' => count($selected_users)]), $PHP_SELF.'?mod='.$mod);
+	}
+}
+
+if ( isset($action) and $action == 'do_mass_delete_users' ){
+
+    $righ_have = (!cute_get_rights('approve_news') and cute_get_rights('edit_all')) ? true : false;
+	
+	if ( !$righ_have ){
+		exit ('Действие запрещено'); 
+	}
+	
+	if ( empty($selected_users) ){
+		msg('error', t('Ошибка'), t('Не выбрано ни одного пользователей для удаления.'), $PHP_SELF.'?mod='.$mod);
+	}
+	
+	if (!$count = $sql->count(['users', 'where' => ['id IN ('.join(', ', $selected_users).')']])){
+		exit ('Выбранные Вами записи не найдены');
+	}
+	
+	$sql->delete(['users', 'where' => ['id IN ('.join(', ', $selected_users).')']]);
+
+	if ($count  == $deleted_users){
+		msg('info', t('Удаление пользователей'), t('Все выбранные Вами пользователи успешно удалены.'), $PHP_SELF.'?mod=editusers');
+	} else {
+		msg('error', t('Удаление пользователей'), t('Удалено <b>%deleted</b> из <b>%selected</b> выбраных пользователей.', ['deleted' => $count,'selected' => count($selected_users)]), $PHP_SELF.'?mod='.$mod);
+	}
+}
+ 

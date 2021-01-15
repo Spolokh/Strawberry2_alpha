@@ -1,0 +1,306 @@
+<?php
+// ********************************************************************************
+// Personal Options
+// ********************************************************************************
+ 
+if (empty($action))
+{
+    foreach ($member as $k => $v) {
+	    if ($k != 'setting' && $k != 'contacts') {
+			$member[$k] = stripslashes(str_replace(['"', '\''], ['&quot;', '&#039;'], $member[$k]));
+		}
+	}
+
+	if ($member['contacts'] AND CN::isJson($member['contacts']))
+	{
+		$member['contacts'] = json_decode ($member['contacts']);
+	}
+
+	if ($config['user_avatar']) {
+	    if ($member['avatar']) {
+	    	//$member['avatar'] = '<img src="'.$config['path_userpic_upload'].'/'.$member['username'].'.'.$member['avatar'].'" style="">';
+	    	$delava = '<input type="checkbox" name="delavatar" id="delavatar">&nbsp;<label for="delavatar">'.t('Удалить аватар?').'</label>';
+	    } else {
+	        unset($member['avatar'], $delava);
+	    }
+
+	    $showrow_avatar = '<tr '.cute_that().'><td height="21">&nbsp;&nbsp;'.t('Аватар').':<td height="21"><input type="hidden" name="max_file_size" value="110000"><input type="file" name="newavatar" accept="image" /></td><td>'.$delava;
+     } else {
+     	 unset($member['avatar']);
+	 } //setting
+	 
+	 echoheader('user', t('Личные настройки'));
+?>
+
+<style>
+.personal.avatar.smile {
+	width: 80px;
+    height: 80px;
+    float: right;
+    right: 25px;
+	padding: 1px;
+	margin: -21px 0 0;
+	position: absolute;
+	border-radius: 50%;
+	border: 1px solid #CCC
+}
+
+</style>
+
+<ul id="tabs">
+	<li><a href="#alls"><?=t('Мои данные'); ?></a></li>
+	<li><a href="#cont"><?=t('Мои контакты'); ?></a></li>
+	<!--li><a href="#location"><?//=t('Местоположение') ?></a></li-->
+
+	<img title="<?=$member['username']?>" id="personalAvatar" class="personal avatar smile" src="<?=$config['path_userpic_upload']?>/<?=$member['username']?>.<?=$member['avatar'].'?'.time ?>" />
+</ul>
+	
+<form method="post" action="<?=$PHP_SELF; ?>" name="personal" enctype="multipart/form-data">
+	<div id="alls" class="tab">
+	<table class="panel">
+		<tr <?=cute_that() ?>>
+			<td width="200">&nbsp;&nbsp;<?=t('Ник'); ?>
+			<td><input type="text" size="40" name="editusername" value="<?=$member['username']; ?>" disabled="true" />
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('Дата регистрации'); ?>
+			<td><?=$time->setTimestamp($member['date'])->format('d.m.Y H:i:s')?>
+			<?//=langdate('l, j M Y - h:i', $member['date']); ?>
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('Группа'); ?>
+			<td><?=$usergroups[$member['usergroup']]['name']; ?>
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('Публикаций'); ?>
+			<td><?=$member['publications']; ?>
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('Новый пароль'); ?>
+			<td><input size="40" type="text" name="editpassword" placeholder="<?=t('Если хотите изменить текущий') ?>" />
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('Имя'); ?>
+			<td><input size="40" type="text" name="editnickname" value="<?=$member['name']; ?>">
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('E-mail'); ?>
+			<td><input size="40" type="email" name="editmail" value="<?=$member['mail']; ?>" required />
+		<tr <?=cute_that(); ?>>
+			<td>&nbsp;&nbsp;<?=t('Дата рождения'); ?>
+			<td><?=date_AddRows($member['age']); ?>
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('Загрузить аватар'); ?>
+			<td><input id="xhr_field" size="40" type="file" name="avatar" accept="image/*" />
+			    <span id="fieldinfo"></span>
+		<tr <?=cute_that() ?>>
+			<td>&nbsp;&nbsp;<?=t('О себе'); ?>
+			<td><textarea type="text" name="editabout" style="width:280px;height:150px;overflow-x:hidden;overflow-y:visible; "><?=$member['about']; ?></textarea> 
+			
+			<?php //if ($member['avatar'] != '') { ?>
+			<!--img title="<?//=$member['username']?>" id="personal_avatar" class="personal avatar" width="<?//=$config['avatar_w']?>" height="<?//=$config['avatar_h']?>" src="<?//=$config['path_userpic_upload']?>/<?//=$member['username']?>.<?//=$member['avatar'].'?'.time ?>" /-->
+			<?php //} ?>
+	</table>
+</div>
+
+<div id="cont" class="tab">
+	<table id="cont" class="panel">
+		<tr <?=cute_that(); ?>>
+			<td width="200">&nbsp;&nbsp;<?=t('Откуда:'); ?>
+			<td><input size="40" type="text" name="contacts[city]" value="<?=($member['contacts']->city ?: ''); ?>">
+		<tr <?=cute_that(); ?>>
+			<td width="200">&nbsp;&nbsp;<?=t('Skype:') ?>
+			<td><input size="40" type="text" name="contacts[skype]" placeholder="Skype" value="<?=($member['contacts']->skype ?: ''); ?>" />
+			 
+		<tr <?=cute_that(); ?>>
+			<td>&nbsp;&nbsp;<?=t('Контактный телефон:') ?>
+			<td><input size="40" type="text" name="contacts[phone]" placeholder="Phone" value="<?=($member['contacts']->phone ?: ''); ?>" />
+			
+		<tr <?=cute_that(); ?>>
+			<td>&nbsp;&nbsp;<?=t('Домашняя страница:'); ?>
+			<td><input size="40" type="url" name="contacts[page]" placeholder="http://" value="<?=($member['contacts']->page ?: ''); ?>" />		
+	
+		<tr <?=cute_that(); ?>>
+			<td>&nbsp;&nbsp;<?=t('Аккаунт в LJ'); ?>
+			<td><input size="40" type="text" name="editlj" value="<?=$member['lj_username']; ?>">
+		<tr <?=cute_that(); ?>>
+			<td>&nbsp;&nbsp;<?=t('Пароль от LJ'); ?>
+			<td><input size="40" type="password" name="editljpass" value="<?=$member['lj_password']; ?>">
+	
+	</table>
+</div>
+<!--div id="location" class="tab">
+	<table class="panel">
+		<tr <?//=cute_that(); ?>>
+			<td width="200">&nbsp;&nbsp;<?//=t('Ваша страна:'); ?> 3159
+			<td><select name="country" id="country" style="width:210px;">
+					<option value="0">Выбрать страну</option>
+					<?php //foreach ( $sql->select(['country', 'select' => ['id', 'name'], 'where' => ['hidden = 0', 'and', 'zone IS NOT NULL'], 'orderby' => ['name', 'ASC']]) AS $row ) { ?>
+					<option value="<?//=$row['id']?>"><?//=$row['name']?></option>
+					<?php// } ?>
+				</select>
+				
+						
+		<tr <?//=cute_that(); ?>>
+			<td width="200">&nbsp;&nbsp;<?//=t('Ваша область:') ?>
+			<td><select name="region" id="region" style="width:210px;" disabled>
+					<option value="0">Выбрать регион</option>
+				</select>
+				
+		<tr <?//=cute_that(); ?>>
+			<td width="200">&nbsp;&nbsp;<?//=t('Ваш город:') ?>
+			<td><?//=makeDataList([], 'city')?>
+			<select name="city" id="city2" style="width: 210px;" disabled>
+					<option value="0">Выбрать город</option>
+				</select>
+	</table>
+</div-->		
+    <input type="hidden" name="mod" value="<?=$mod?>">
+	<input type="hidden" name="action" value="dosavepersonal">
+	<input type="submit" value=" <?=t('Сохранить'); ?> " accesskey="s">
+	 
+	<span id="result"></span>
+</form>
+
+<script type="text/javascript">
+/*
+$('country').on('change', function(){
+
+    new Ajax.Request('/ajax/ajax.location.php', {
+		method : 'GET',
+		parameters: { country: $F('country') },	//requestHeaders: {Accept: 'application/json'},
+		onSuccess : function (data) {	//var json = transport.responseJSON; var text = transport.responseText;
+			option = '<option value="0">Выбрать регион</option>';
+			data.responseJSON.each(function(e){
+				option += '<option value="' +e.region_id+ '">' +e.name+ '</option>' ;
+			}); $('region').update(option).enable().value="0"; //$('region').update(div).enable();
+		},
+
+		onFailure: function(data) {
+			$('result').update(data.responseText);
+		}
+	});
+});
+
+$('region').on('change', function(){
+
+    new Ajax.Request('/ajax/ajax.location.php', {
+		method : 'GET',
+		parameters: { region: $F('region') }, //requestHeaders: {Accept: 'application/json'},
+		onSuccess : function(data) {	//var json = transport.responseJSON; var text = transport.responseText;
+			option = ''; //<option value="0">Выбрать регион</option>
+			data.responseJSON.each(function(e){
+				option += '<option value="' +e.name+ '"></option>' ;
+			}); $('city').update(option).enable().value="0";
+		},
+
+		onFailure: function(data) {
+			$('result').update(data.responseText);
+		}
+	});
+});*/
+</script>
+
+<?php echofooter();
+}
+
+// ********************************************************************************
+// Save Personal Options
+// ********************************************************************************
+if ($action == 'dosavepersonal'){
+
+	foreach ($sql->select(['users', 'select' => ['mail'], 'where' => ["id != $member[id]"]]) as $row){
+		
+		if ($editmail and strtolower($row['mail']) == strtolower($editmail)){
+			msg('error', t('Ошибка'), t('Такой e-mail уже кто-то использует'), $PHP_SELF.'?mod=personal');
+		}
+	}
+
+	$userpic_folder = cute_parse_url($config['path_userpic_upload']);
+	$userpic_folder = $userpic_folder['abs'];
+
+    if ( !is_dir($userpic_folder) ){
+    	//@mkdir($userpic_folder, chmod);
+    	//@chmod($userpic_folder, chmod);
+    }
+
+    if ($delavatar){
+    	unset($change_avatar);
+    	@unlink($userpic_folder.'/'.$member['username'].'.'.$member['avatar']);
+    } else {
+    	$change_avatar = $member['avatar'];
+    }
+
+	$editljpass   = $editljpass ? $editljpass : $member['lj_password'];
+	$upload_image = false;
+    
+	if ($_FILES and !$_FILES['avatar']['error']){
+	
+		$handle = new Upload($_FILES['avatar']);	  
+			
+		if ($handle->uploaded) {
+		
+			$handle->allowed = ['image/*'];
+			$handle->file_new_name_body = $member['username'];
+			$handle->image_resize      = true;
+			$handle->image_ratio_crop  = true;
+			$handle->image_x           = $config['avatar_w'];
+			$handle->image_y           = $config['avatar_h'];    //$handle->image_ratio_y  = true;     
+			$handle->image_convert     = 'jpg';
+			$handle->file_overwrite    = true;
+			$handle->process($userpic_folder);
+			  
+			if ($handle->processed) {
+				$upload_image  = true; 			 
+				$change_avatar = $handle->file_dst_name_ext;
+			} 	$handle->clean();
+		}
+	}
+
+    foreach ($sql->select(['users', 'select' => ['password'], 'where' => $member['id']]) as $row) {
+		if ($editpassword){
+			$row['password'] 	  = md5x($editpassword);
+			$_SESSION['password'] = $row['password'];
+			cute_setcookie('password', $row['password']);
+		}
+    }
+	
+	if ($editmail and !filter_var($editmail, FILTER_VALIDATE_EMAIL)){ 
+		msg('error', t('Ошибка'), t('Извините, этот e-mail неправильный.'), $PHP_SELF.'?mod=personal');
+ 	}
+	
+	if(($added_time = strtotime($day.' '.$month.' '.$year)) == -1){
+		$added_time = time;
+    }
+	
+	$values['password']    = $row['password'];
+	$values['name']        = replace_comment('add', $editnickname);
+	$values['mail']        = $editmail;
+	$values['age']         = $added_time;
+	//'hide_mail'  => $edithidemail ? true : false,
+	$values['avatar']      = $change_avatar;
+	//$values['setting']     = $cute->json_encode($setting);
+	//'homepage'   => replace_comment('add', $editsite),
+	//$values['contacts']    = replace_comment('add', join ( '|', array_values($contacts) ));
+	$values['location']    = replace_comment('add', $editlocation);
+	$values['contacts']    = json_encode($contacts, JSON_UNESCAPED_UNICODE);
+	$values['about']       = replace_comment('add', $editabout);
+	$values['lj_username'] = replace_comment('add', $editlj);
+	$values['lj_password'] = $editljpass;
+	 
+    $sql->update(['users', 'where' => $member['id'], 'values' => $values]); 
+	msg('info', t('Изменения сохранены'), t('Ваша персональная информация была успешно сохранена'), $PHP_SELF.'?mod=personal');
+}
+
+/*
+$file_content = file('myfile.sql'); 
+$query = ""; 
+
+foreach($file_content as $sql_line) { 
+	
+	if(trim($sql_line) != "" && strpos($sql_line, "--") === false) { 
+		
+		$query .= $sql_line; 
+		
+		if (substr(rtrim($query), -1) == ';'){ 
+			echo $query; 
+			$result = mysql_query($query) or die(mysql_error()); 
+			$query = ""; 
+		} 
+	} 
+} */
+?>

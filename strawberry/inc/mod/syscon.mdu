@@ -1,0 +1,280 @@
+<?php
+// ********************************************************************************
+// System Configuration
+// ********************************************************************************
+
+if ( empty($action) ){
+	
+	$sys_con_gmtoffset_arr = ['-720' => 'GMT -12:00', '-660' => 'GMT -11:00', '-600' => 'GMT -10:00', '-570' => 'GMT -9:30', '-540' => 'GMT -9:00', '-510' => 'GMT -8:30', '-480' => 'GMT -8:00', '-420' => 'GMT -7:00', '-360' => 'GMT -6:00', '-300' => 'GMT -5:00', '-240' => 'GMT -4:00', '-210' => 'GMT -3:30', '-180' => 'GMT -3:00', '-120' => 'GMT -2:00', '-60' => 'GMT -1:00', '0' => 'GMT +00:00', '60' => 'GMT +01:00', '120' => 'GMT +02:00', '180' => 'GMT +03:00', '210' => 'GMT +03:30', '240' => 'GMT +04:00', '270' => 'GMT +04:30', '300' => 'GMT +05:00', '330' => 'GMT +05:30', '360' => 'GMT +06:00', '390' => 'GMT +06:30', '420' => 'GMT +07:00', '480' => 'GMT +08:00', '540' => 'GMT +09:00', '570' => 'GMT +09:30', '600' => 'GMT +10:00', '630' => 'GMT +10:30', '660' => 'GMT +11:00', '690' => 'GMT +11:30', '720' => 'GMT +12:00', '780' => 'GMT +13:00', '840' => 'GMT +14:00'];
+	$sys_con_charset_arr   = ['X-MAC-ARABIC' => 'Arabic (Macintosh)', 'windows-1256' => 'Arabic (Windows)', 'iso-8859-2' => 'Central European (ISO-8859-2)', 'X-MAC-CENTRALEURROMAN' => 'Central European (MacCE)', 'windows-1250' => 'Central European (Windows-1250)', 'iso-8859-5' => 'Cyrillic (ISO-8859-5)', 'KOI8-R' => 'Cyrillic (KOI8-R)', 'x-mac-cyrillic' => 'Cyrillic (MacCyrillic)', 'windows-1251' => 'Cyrillic (Windows-1251)', 'iso-8859-7' => 'Greek (ISO-8859-7)', 'x-mac-greek' => 'Greek (MacGreek)', 'windows-1253' => 'Greek (Windows-1253)', 'X-MAC-HEBREW' => 'Hebrew (Macintosh)', 'windows-1255' => 'Hebrew (Windows)', 'Shift_JIS' => 'Japanese (Shift_JIS)', 'EUC-JP' => 'Japanese (EUC)', 'ISO-2022-JP' => 'Japanese (JIS)', 'EUC-KR' => 'Korean (EUC-KR)', 'gb2312' => 'Simplified Chinese (gb2312)', 'big5' => 'Traditional Chinese (big5)', 'X-MAC-THAI' => 'Thai (Macintosh)', 'Windows' => 'Thai (Windows)', 'iso-8859-5' => 'Turkish (Latin5)', 'X-MAC-TURKISH' => 'Turkish (Macintosh)', 'windows-1254' => 'Turkish (Windows)', 'utf-8' => 'UTF-8', 'iso-8859-1' => 'Western (Latin1)', 'macintosh' => 'Western (Macintosh)', 'windows-1252' => 'Western (Windows 1252)'];
+    
+	$handle = opendir(skins_directory);
+	while ($file  = readdir($handle)){
+		$file_arr = explode('.', $file);
+		if ($file_arr[1] == 'skin') {
+			$sys_con_skin_arr[$file_arr[0]] = $file_arr[0];
+		}
+	}
+
+	$handle = opendir(themes_directory);
+	while ($file = readdir($handle)){
+		$file_arr = explode('.', $file);
+		if ($file_arr[0] == $config['theme']) {
+			$sys_con_page_arr[$file_arr[0]] = $file_arr[0];
+		}
+	}
+
+	$handle = opendir(languages_directory);
+	while ($file = readdir($handle)){
+		if ($file != '.' and $file != '..' and is_dir(languages_directory.'/'.$file)){
+			$sys_con_lang_arr[$file] = strtoupper($file);
+		}
+	}
+	
+	$dateTimeZone = ['' => t('Выбрать часовой пояс')];
+	$timezone_identifiers = DateTimeZone::listIdentifiers();
+	foreach ($timezone_identifiers as $v){
+		if ( preg_match( '/^(America|Europe)\//', $v ) ){
+			$dateTimeZone[$v] = $v;
+		}
+	}
+	
+	echoheader('options', t('Настройки системы'));
+?>
+
+<!--select id="TIMEZONE" name="TIMEZONE"-->
+    <?php
+    /*$timezone_identifiers = DateTimeZone::listIdentifiers();
+    foreach( $timezone_identifiers as $value ){
+        if (preg_match( '/^(America|Atlantic|Europe)\//', $value ) ){
+            $ex = explode("/", $value);//obtain continent,city    
+            if ($continent != pos($ex)){
+                if ($continent != "") echo '</optgroup>';
+                echo '<optgroup label="'. pos($ex) .'">';
+            }
+    
+            $city      = end($ex);
+            $continent = pos($ex);
+            echo '<option value="'.$value.'">'.$city.'</option>';                
+        }
+    }*/
+?>
+<!--/optgroup>
+</select-->
+<ul id="tabs">
+	<li><a href="#alls"><?=t('Система') ?></a></li>
+	<li><a href="#temp"><?=t('Шаблон') ?></a></li>
+	<li><a href="#post"><?=t('Новости') ?></a></li>
+	<li><a href="#comm"><?=t('Комментарии') ?></a></li>
+	<li><a href="#imgs"><?=t('Галерея') ?></a></li>
+	<li><a href="#users"><?=t('Пользователи') ?></a></li>
+	<li><a href="#mail"><?=t('Контакты') ?></a></li>
+</ul>
+
+<form action="<?=$PHP_SELF ?>" method="post">
+<table id="alls" class="showRow tab">
+<?php // System Configurations
+
+showRow(t('Полный путь к директории, где установлена Strawberry:'), t('Например: http://example.com/news'), '<input type="text" size="35" name="save_con[http_script_dir]" value="'.$config['http_script_dir'].'">');
+
+showRow(t('Домашняя страница сайта:'), t('Например: http://example.com/news.php'), '<input type="text" size="35" name="save_con[http_home_url]" value="'.$config['http_home_url'].'">');
+
+showRow(t('Путь к директории для загрузки картинок:'), t('Например: http://example.com/news/data/upimages'), '<input type="text" size="35" name="save_con[path_image_upload]" value="'.$config['path_image_upload'].'">');
+
+showRow(t('Название сайта:'), t('Например: "Strawberry homepage"'), '<input type="text" size="35" name="save_con[home_title]" value="'.$config['home_title'].'">');
+
+showRow(t('Краткое описание сайта:'), t('Соответствует тегу META DESCRIPTION для поисковых систем, например: Тестовая площадка для "Strawberry"'), '<input type="text" size="35" name="save_con[description]" value="'.$config['description'].'">');
+
+showRow(t('Ключевые слова сайта:'), t('Соответствует тегу META keywords для поисковых систем (вводятся через запятую)'), '<input type="text" size="35" name="save_con[keywords]" value="'.$config['keywords'].'">');
+
+showRow(t('Кодировка:'), t('кодировка должна соответствовать кодировки всего сайта, так как в этой кодировке данные будут записываться в базу; учтите, смена кодировки может привести к превращению старых данных (записаных в другой кодировке) в абру-кадабру (это не относится к символам на латинице, ибо почти все, если не все, кодировки поддерживают латиницу)'), makeDropDown($sys_con_charset_arr, 'save_con[charset]', $config['charset']));
+
+showRow(t('Язык:'), t('выбирите язык'), makeDropDown($sys_con_lang_arr, 'save_con[language]', $config['language']));
+
+showRow(t('Кодировка базы данных:'), t('указывайте кодировку только в случае проблем с кодировкой базы MySQL; например: cp1251'), '<input type="text" size="35" name="save_con[dbcharset]" value="'.$config['dbcharset'].'" size="40">');
+
+showRow(t('mod_rewrite:'), t('Если на сервере установлен mod_rewrite (спросите хостера)'), makeDropDown([t('Нет'), t('Да')], 'save_con[mod_rewrite]', $config['mod_rewrite']));
+
+showRow(t('Кэширование:'), t('Использование кэша снизит нагрузку на сервер (раз в десять)'), makeDropDown([t('Нет'), t('Да')], 'save_con[cache]', $config['cache']));
+
+showRow(t('E-mail администратора:'), t('E-mail на который присылать различные уведомления'), '<input size="35" type="email" name="save_con[admin_mail]" value="'.$config['admin_mail'].'">');
+
+showRow(t('Коррекция временных зон:'), t('На летнее время (плюс час) и обратно на зимнее по идеи само переходит (уйдёт в небытиё).'), makeDropDown($sys_con_gmtoffset_arr, 'save_con[gmtoffset]', $config['gmtoffset']).'<br />'.t('<small>Время на сервере: %time</small>', ['time' => $time->setTimestamp(time)->format($config['timestamp_comment'])]));
+
+showRow(t('Коррекция часовых поясов:'), t('Настройка часового пояса пока реализованно на европейские зоны'), makeDropDown($dateTimeZone, 'save_con[timestamp_zone]', $config['timestamp_zone']).'<br />'.t('<small>Временная зона: %zone</small>', ['zone' => $config['timestamp_zone']]));
+
+showRow(t('Префикс кукисов:'), t('Имеется в виду cookie браузера; например: cute_'), '<input type="text" size="35" name="save_con[cookie_prefix]" value="'.$config['cookie_prefix'].'">');
+?>
+</table>
+
+<table id="temp" class="showRow tab">
+<?php // Templates options
+
+showRow(t('Скин АдминЦентра:'), t('Выбирите скин для АдминЦентра'), makeDropDown($sys_con_skin_arr, 'save_con[skin]', $config['skin']));
+
+showRow(t('Скин Домашней страницы:'), t('Выбирите скин для домашней страницы'), makeDropDown($sys_con_page_arr, 'save_con[theme]', $config['theme']));
+
+showRow(t('Фон Домашней страницы:'), t('Выбирите цвет фона для домашней страницы'), '<input id="procolor" type="text" size="6" name="save_con[background]" value="'.$config['background'].'">');
+
+showRow(t('Сайт выключен:'), t('Позволяет закрыть доступ к сайту. Если выбрать "Да", на сайте будет отображаться сообщение, заданное в данном поле .'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[closed_site]', $config['closed_site']));
+
+showRow(t('Сообщение при выключенном сайте:'), t('Сообщение, выводимое на страницах сайта, когда он выключен (например закрыт на техническое обслуживание).'), '<input type="text" size="35" name="save_con[closed_text]" value="'.$config['closed_text'].'">');
+
+?>
+</table>
+
+<table id="post" class="showRow tab">
+<?php // News options
+showRow(t('Размер иконки для новости:'), t('Размер по ширине в пикселях'), '<input type="text" size="3" maxlength="3" id="newsicon" name="save_con[newsicon]" value="'.$config['newsicon'].'" /><br />'.t('<small></small>'));
+
+showRow(t('Расширение для картинок:'), t('Соответствует расширениям картинок. Например gif, jpg, png, bmp, jpe, jpeg'), '<input size="3" type="text" name="save_con[poster_ext]" value="'.$config['poster_ext'].'" />');
+
+showRow(t('Количество новостей / постов в колонке:'), t('По умолчанию можно пользоваться переменной <i>$number</i>'), '<input size="3" type="text" name="save_con[news_number]" value="'.$config['news_number'].'" maxlength="3"><br />');
+
+showRow(t('Формат времени для новостей:'), t('<a href="javascript:Help(\'date\')">помощь по работе функции</a>'), '<input type="text" name="save_con[timestamp_active]" value="'.$config['timestamp_active'].'" size="35"><br />'.t('<small>Текущий формат: %format</small>', array('format' => langdate($config['timestamp_active']))));
+
+showRow(t('Групповой вывод даты:'), t('Вывод даты на несколько новостей за один день'), makeDropDown([t('Нет'), t('Да')], 'save_con[date_header]', $config['date_header']), 'yes');
+
+showRow(t('Формат даты при групповом выводе:'), t('<a href="javascript:Help(\'date\')">помощь по работе функции</a>'), '<input type="text" name="save_con[date_headerformat]" value="'.$config['date_headerformat'].'" size="35"><br />'.t('<small>%format</small>', array('format' => langdate($config['date_headerformat']))));
+
+showRow(t('Уведомления о новых новостях:'), t('Отсылка оповещений администратору'), makeDropDown([t('Нет'), t('Да')], 'save_con[send_mail_upon_new]', $config['send_mail_upon_new']), 'yes');
+
+showRow(t('Разбивание переключения страниц на секции:'), t('Если страниц больше заданого количества, они будут разбиты на сецкии; напр.: 1 2 3 ... 98 99 100; 0 = не разбивать'), '<input type="text" name="save_con[pages_break]" size="3" value="'.$config['pages_break'].'">');
+
+if ($config['pages_break']){
+	showRow(t('Количество страниц в секций:'), t('Если "Разбивание переключения страниц на секции" не отключено, то данная опция позволит выставить количество страниц в секции; напр.: если поставить 4 будет 1 2 3 4 ... 97 98 99 100'), '<input type="text" name="save_con[pages_section]" size="3" value="'.$config['pages_section'].'">');
+}
+?>
+</table>
+
+<table id="comm" class="showRow tab">
+<?php
+showRow(t('Полное отключение комментариев:'), t('Вы можете подключать и отключать комментарии к постам'), makeDropDown([t('Отключено'), t('Включено')], 'save_con[addcomments]', $config['addcomments']));
+
+showRow(t('Уведомления о новых комментариях:'), t('Отсылка комментариев на Ваш e-mail'), makeDropDown([t('Нет'), t('Да')], 'save_con[send_mail_upon_posting]', $config['send_mail_upon_posting']));
+
+showRow(t('E-mail посетителя:'), t('Нужно ли просить e-mail посетителя при добавлении комментария'), makeDropDown([t('Нет'), t('Да')], 'save_con[need_mail]', $config['need_mail']));
+
+showRow(t('Премодерация комментариев:'), t('"Да" - комментарии не публикуются по умолчанию, а проходят предворительную премодерацию администраторами'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[comm_moderation]', $config['comm_moderation']));
+
+showRow(t('Комментариев на странице:'), t('Сколько показывать комментариев на одной странице; 0 = не делить на страницы'), '<input type="text" size="3" name="save_con[cnumber]" value="'.$config['cnumber'].'" />');
+
+showRow(t('Автоматическое разделение слова:'), t('Если слово в комментарии превышает заданное число символов оно разделяется пробелом; 0 = не разделять'), '<input type="text" size="3" name="save_con[auto_wrap]" value="'.$config['auto_wrap'].'" />');
+
+showRow(t('Количество знаков в комментарии:'), t('Сколько допускается знаков в комментариях; 0 = неограниченное количество'), '<input type="text" size="3" name="save_con[comments_length]" value="'.$config['comments_length'].'" />');
+
+showRow(t('Защита от флуда:'), t('Указывается в секундах; 0 = защиты нет'), '<input type="text" name="save_con[flood_time]" value="'.$config['flood_time'].'" size="3">');
+
+showRow(t('Смайлики:'), t('Разделяются запятыми (<b>,</b>)'), '<input type="text" size="35" name="save_con[smilies]" value="'.$config['smilies'].'" />');
+
+showRow(t('Смайликов на одной линии:'), t('0 = все смайлики будут в одну линию'), '<input type="text"  name="save_con[smilies_line]" value="'.$config['smilies_line'].'" size="3">');
+
+showRow(t('Комментарии для зарегистрированных:'), t('"Да" - комментировать могут только зарегистрированные пользователи'), makeDropDown([t('Нет'), t('Да')], 'save_con[only_registered_comment]', $config['only_registered_comment']));
+
+showRow(t('Формат времени для комментариев:'), t('<a onClick="javascript:Help(\'date\')" href="#">помощь по работе функции</a>'), '<input type="text" name="save_con[timestamp_comment]" value="'.$config['timestamp_comment'].'" size="35"><br /><small>Текущий формат: '.langdate($config['timestamp_comment']).'</small>');
+
+showRow(t('Разбивание переключения страниц комментариев на секции:'), t('Если страниц больше заданого количества, они будут разбиты на сецкии; напр.: 1 2 3 ... 98 99 100; 0 = не разбивать'), '<input type="text" size="3" name="save_con[cpages_break]" value="'.$config['cpages_break'].'" />');
+
+if ($config['cpages_break']){
+	showRow(t('Количество страниц в секций:'), t('Если "Разбивание переключения страниц комментариев на секции" не отключено, то данная опция позволит выставить количество страниц в секции; напр.: если поставить 4 будет 1 2 3 4 ... 97 98 99 100'), '<input type="text" size="3" name="save_con[cpages_section]" value="'.$config['cpages_section'].'" />');
+}//echo close_table();
+?>
+</table>
+
+<table id="imgs" class="showRow tab">
+<?php showRow(t('Расширения файлов для загрузки картинок:'), t('Добавлять c пробелом. Разделяются запятыми (<b>,</b>).'), '<input type="text" size="30" name="save_con[type_images_upload]" value="'.$config['type_images_upload'].'" />');
+?>
+</table>
+
+<table id="shop" class="showRow tab" style="display:none;">
+	<tr>
+	<td height="200"><h2 style="padding:10px; color:red;">В разработке</h2>
+</table>
+
+<table id="users" class="showRow tab">
+
+<?php //Users options
+showRow(t('Путь к директории для загрузки аватаров:'), t('Например: http://example.com/news/data/userpics'), '<input type="text" size="35" name="save_con[path_userpic_upload]" value="'.$config['path_userpic_upload'].'" />');
+
+showRow(t('Расширение аватара:'), t('Соответствует расширениям картинок. Например gif, jpg, png, bmp, jpe, jpeg'), '<input size="3" type="text" name="save_con[avatar_ext]" value="'.$config['avatar_ext'].'" />');
+
+showRow(t('Максимальная ширина аватара:'), t('Оптимальная ширина - 100 пикс.'), '<input size="3" type="text" name="save_con[avatar_w]" value="'.$config['avatar_w'].'" />');
+
+showRow(t('Максимальная высота аватара:'), t('Оптимальная длина - 100 пикс.'), '<input size="3" type="text" name="save_con[avatar_h]" value="'.$config['avatar_h'].'" />');
+
+showRow(t('Колличество пользователей на странице:'), t('По умолчанию - 21 пользователь.'), '<input type="text" size="3" name="save_con[users_number]" value="'.$config['users_number'].'" />');
+
+showRow(t('Разрешить загрузку аватаров:'), t('"Да" - разрешается пользователю загружать свой аватар'), makeDropDown([t('Нет'), t('Да')], 'save_con[user_avatar]', $config['user_avatar']));
+
+showRow(t('Папки пользовательских картинок:'), t('"Да" - каждому пользователю своя папка'), makeDropDown([t('Нет'), t('Да')], 'save_con[use_images_uf]', $config['use_images_uf']));
+
+?>
+</table>
+
+<table id="mail" class="showRow tab">
+
+<?php // Contacts options
+showRow(t('Включить панель контактов:'), t('"Да" - панель контактов отображается на странице вашего сайта'), makeDropDown([t('Нет'), t('Да')], 'save_con[site_contacs]', $config['site_contacs']));
+
+showRow(t('Формат почтовых сообщений:'), t('Текстовой формат / Html - формат для присылаемых сообщений'), makeDropDown([t('Текстовой формат '), t('HTML-формат')], 'save_con[mail_format]', $config['mail_format']));
+
+showRow(t('Количество знаков в присылаемом сообщении:'), t('сколько допускается знаков в форме обратной звязи; 0 = неограниченное количество'), '<input type="int" size="3" maxlength="4" name="save_con[callback_length]" value="'.$config['callback_length'].'" />');
+
+showRow(t('Контактный e-mail:'), t('Например: mailbox@yourdomen.com'), '<input size="35" type="email" name="save_con[site_mail]" value="'.$config['site_mail'].'">');
+
+showRow(t('Контактные телефоны / факс:'), t('Например: +7 (495) 123 - 4567, разделяются запятыми (,)'), '<input type="text" size="35" name="save_con[site_phone]" value="'.$config['site_phone'].'">');
+
+showRow(t('Физический адресс:'), t('Например: "123456, Москва, ул. Свободных колхозников, д1/2", или почтовый абонетский ящик .'), '<input type="text" size="35" name="save_con[site_address]" value="'.$config['site_address'].'">');
+?>
+</table>
+
+<input type="hidden" name="mod" value="syscon">
+<input type="hidden" name="action" value="dosavesyscon">
+<input type="submit" accesskey="s" value="  <?=t('Сохранить'); ?>  " />
+</form>
+<script type="text/javascript">
+<!--
+ProColor.prototype.attachButton('procolor', {
+	imgPath:'/cp/skins/images/procolor/procolor_win_', showInField:true
+});
+-->
+</script>
+<?php echofooter();
+}
+
+// ********************************************************************************
+// Save System Configuration
+// ********************************************************************************
+if ($action == 'dosavesyscon'){
+
+	foreach ($save_con as $k => $v){
+		if (get_magic_quotes_gpc()){
+			$save_con[$k] = stripslashes($save_con[$k]);
+		}
+	}
+
+	$save_con['dbname']   = $config['dbname'];
+	$save_con['dbuser']   = $config['dbuser'];
+	$save_con['dbpass']   = $config['dbpass'];
+	$save_con['prefix']   = $config['prefix'];
+	$save_con['dbhost']   = $config['dbhost'];
+	$save_con['site_key'] = $config['site_key'];
+	$save_con['database'] = $config['database'];
+	$save_con['version_id']  = $config['version_id'];
+	$save_con['version_name'] = $config['version_name'];
+
+	$save_con['site_accesskey']  = $config['site_accesskey'];
+	$save_con['timestamp_registered_site'] = $config['timestamp_registered_site'];
+    $save_con['http_engine_dir'] = $config['http_engine_dir'];
+
+	$save_con['post_types']   = ['' => t('Тип поста'), 'page' => t('Страница'), 'blog' => t('Блог'), 'poll' => t('Опрос'), 'private' => t('Запароленый')];
+	$save_con['charset']      = strtolower($save_con['charset']);
+	$save_con['dbcharset']    = strtolower($save_con['dbcharset']);
+	$save_con['http_script_dir']     = preg_replace('/([\/]+)$/', '', $save_con['http_script_dir']);
+	$save_con['http_home_url']       = preg_replace('/([\/]+)$/', '', $save_con['http_home_url']);
+	$save_con['path_image_upload']   = preg_replace('/([\/]+)$/', '', $save_con['path_image_upload']);
+	$save_con['path_userpic_upload'] = preg_replace('/([\/]+)$/', '', $save_con['path_userpic_upload']);
+	save_config($save_con);
+	msg('info', t('Настройки сохранены'), t('Настройки системы были успешно сохранены.'), $PHP_SELF.'?mod=syscon');
+}
+?>

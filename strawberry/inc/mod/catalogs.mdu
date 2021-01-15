@@ -1,0 +1,202 @@
+<?php
+
+$query = $catalogs ;
+
+function tmp_category_menu($type = ''){
+	global $row, $catid, $PHP_SELF, $query, $action, $usergroups;
+
+    foreach ((array)$query as $row){
+        $real[$row['id']] = $row['name'];
+
+        if ($catid == $row['id'] and $action == 'edit'){
+        	$parent   = $row['parent'];
+        }
+	}
+
+    if ($parent){
+		$catalogs_list = catalogs_get_tree('-&nbsp', '<option value="{id}"[php]tmp_selected({id}, '.$parent.')[/php]>{prefix}{name}</option>', false);
+	} else {
+		$catalogs_list = catalogs_get_tree('-&nbsp;', '<option value="{id}">{prefix}{name}</option>', false);
+	}
+
+	ob_start();
+
+	if ($catid){
+	    foreach ($query as $row){
+	        if ($catid == $row['id'] and $action == 'edit'){
+	            $id          = $row['id'];
+	            $name        = $row['name'];
+	            $url         = $row['url'];
+	            $icon        = $row['icon'];
+	            $template    = $row['template'];
+	            $description = replace_news('admin', $row['description']);
+	            $access      = $row['usergroups'];
+				$hidden      = $row['hidden'];
+	        }
+	    }
+	}
+?>
+
+<form action="<?=$PHP_SELF; ?>?mod=catalogs" method="post">
+	<table border="0" width="100%" class="panel">
+		<tr>
+			 <td width="200"><?=t('Название'); ?>
+			 <td><input size="40" value="<?=$name; ?>" type="text" name="name"/>
+		<tr>
+			 <td width="200"><?=t('УРЛ (при желании)'); ?>
+			 <td><input size="40" value="<?=$url; ?>" type="text" name="url"/>
+		<tr>
+			<td><?=t('Иконка'); ?>
+			<td><input size="40" value="<?=$icon; ?>" type="text" name="icon"/>
+ 
+		<tr>
+			<td width="200"><?=t('Описание'); ?>
+			<td><textarea size="40" id="description" name="description"><?=replace_news('show', $description); ?></textarea>
+		<tr>
+			 <td width="200"><?=t('Родитель'); ?>
+			 <td>
+				  <select size="1" name="parent">
+					<option value="">...</option>
+					   <?=$catalogs_list; ?>
+				  </select>
+		<tr>
+			<td width="200"><?=t('Доступна для'); ?>
+			<td>
+			   <select name="cat_usergroups[]" size="7" multiple="multiple">
+			   <option value="">...</option>
+			   <? foreach ($usergroups as $usergroup){ ?>
+			   <option value="<?=$usergroup['id']; ?>"<?=(in_array($usergroup['id'], explode(',', $access)) ? ' selected' : ''); ?>><?=$usergroup['name']; ?></option>
+			   <? } ?>
+			   </select>
+	   
+	    <tr>
+			<td><?=t('Отключение'); ?>
+			<td><?=makeDropDown(array(t('Нет'), t('Да')), 'hidden', $hidden); ?>
+		<tr>
+			 <td width="200">
+			 <td><input type="submit" value="<?=($action == 'edit' ? t('Редактировать') : ('Добавить')); ?>">
+	</table>
+			<input type="hidden" name="action" value="<?=$type; ?>">
+			<input type="hidden" name="catid" value="<?=$catid; ?>">
+</form>
+
+<?
+    $return = ob_get_contents();
+	ob_end_clean();
+    return $return;
+}
+
+// ********************************************************************************
+// Add New Category
+// ********************************************************************************
+if ($action == 'add' and $name){
+
+    foreach ($query as $row){
+        if (($row['url'] == $url or $row['url'] == totranslit($name)) and $row['parent'] == $parent){
+        	msg('error', t('Ошибка'), t('Категория с таким именем уже существует.'), $PHP_SELF.'?mod=catalogs');
+        }
+    }
+
+    $last = end($query);
+    
+    $sql->insert(array(
+    'table'  => 'catalogs',
+    'values' => array(
+                'id'        => ($last['id'] + 1),
+                'name'      => $name,
+                'url'      	=> ($url ? $url : totranslit($name)),
+                'icon'     	=> $icon,
+                'parent'    => $parent,
+                'level'     => ($parent ? ($query[$parent]['level'] + 1) : ''),
+                'description' => replace_news('add', $description),
+                'usergroups'  => @join(',', $cat_usergroups),
+				'hidden'      => $hidden ? true : false
+          )
+    ));
+
+    header('Location: '.$PHP_SELF.'?mod=catalogs');
+}
+
+// ********************************************************************************
+// Remove Category
+// ********************************************************************************
+if ($action == 'remove' and $catid){
+
+	foreach (explode(',', get_children($query, $catid)) as $catid_with_children){
+		$sql->delete(array('catalogs', 'where' => array("id = $catid_with_children")));
+    }
+	
+    header('Location: '.$PHP_SELF.'?mod=catalogs');
+}
+
+// ********************************************************************************
+// Edit Category
+// ********************************************************************************
+if ($action == 'edit' and $catid){
+      foreach ($query as $row){
+        if ($row['id'] == $catid){
+        	msg('options', t('Редактировать категорию'), tmp_category_menu('doedit'));
+        }
+    
+    }
+
+} elseif ($action == 'doedit' and $catid and $name){
+    $sql->update(array(
+    'table'  => 'catalogs',
+    'where'  => array("id = $catid"),
+    'values' => array(
+                'name'      => $name,
+                'url'      	=> ($url ? $url : totranslit($name)),
+                'icon'     	=> $icon,
+                'parent'    => $parent,
+                'level'     => ($parent ? ($query[$parent]['level'] + 1) : ''),
+                'description' => replace_news('add', $description),
+                'usergroups'  => @join(',', $cat_usergroups),
+				'hidden'      => $hidden ? true : false
+                )
+    ));
+
+    header('Location: '.$PHP_SELF.'?mod=catalogs');
+}
+
+// ********************************************************************************
+// Show Categories
+// ********************************************************************************
+echoheader('catalogs', t('Каталог'));
+?>
+
+<table border="0" cellpading="0" cellspacing="0" width="100%">
+ <td  height="33"><b><?=t('Добавить каталог'); ?></b>
+ <?=tmp_category_menu('add'); ?>
+ <td  height="33">
+   <tr>
+  <td colspan="2" height="11"><img border="0" src="skins/images/blank.gif" width="1" height="20">
+
+<?
+if (!$query){
+?>
+
+<tr>
+ <td colspan="2" height="14"><p align="center"><?=t('<b>Категорий нет</b><br />Категории создаются при желании, вы можете прекрасно обойтись и без них.'); ?>
+
+<?
+} else 
+?>
+
+  <tr>
+   <td colspan="2" height="1">
+       <table width="100%"  cellspacing="0" cellpadding="1">      
+           <?
+           foreach ($query as $row){
+           $no_foto = '<img src="skins/images/default/no_foto.gif" align="right" alt="нет фото">';
+           $edit = ' 
+		   &nbsp;<small><a href="?mod=catalogs&amp;action=edit&amp;catid='.$row['id'].'">'.t('[правка]').'</a>&nbsp;
+		   <a href="javascript:confirmDelete(\'?mod=catalogs&amp;action=remove&amp;catid='.$row['id'].'\')">'.t('[удалить]').'</a></small>';
+           echo showRow($row['id'].') '.$row['name'].$edit, $row['description'], ($row['icon'] ? '<img src="'.$config['path_image_upload'].'/'.$row['icon'].'" align="right">' : $no_foto));
+           }
+           ?>
+     </table>
+</table>
+<? 
+ echofooter(); 
+?>

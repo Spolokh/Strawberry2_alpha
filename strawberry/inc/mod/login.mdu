@@ -1,0 +1,119 @@
+<?php
+
+if ($action == 'forgot') {
+	if ($for) {
+	    if ($key) {
+		
+	        $password = file_read(cache_directory.'/_'.$for.'_.tmp');
+	        unlink(cache_directory. '/_' .$for. '_.tmp');
+
+	        if ( $key === $password ) {
+			
+	            $sql->update(['users', 'where' => ["username = $for", 'or', "mail = $for"], 'values' => ['password' => $password]]);
+	            msg('info', t('Восстановление пароля'), t('Пароль был успешно изменён изменён.'), $PHP_SELF);
+
+			} else {
+				msg('info', t('Ошибка'), t('Ключ не верный. Попробуйте снова.'), $PHP_SELF);
+			}		
+			
+	    } else {
+
+			$for   = htmlspecialchars($for); 
+			
+			$user = $sql->select(['users', 'where'=> ["username = $for", 'or', "mail = $for", 'and', 'deleted != 1']]);
+			$user = reset($user);
+
+			if ((strtolower($for) == strtolower($user['username'])) or (strtolower($for) == strtolower($user['mail']))){
+	                					
+				if ( empty($user['mail']) or !filter_var($user['mail'], FILTER_VALIDATE_EMAIL) ) {
+					msg('info', t('Восстановление пароля'), t('Пользователь <b>%user</b> найден, но он не указал свой e-mail. Если вы являетесь этим пользователем, то обратитесь к администрации.', 
+					['user' => $user['name']]), $PHP_SELF);
+				}
+				
+				$password = $cute->random_keys();
+				$activurl = $config['http_script_dir'].'/cp/index.php?mod=' .$mod. '&action='.$action.'&key='.md5x($password).'&for='.$user['username'];
+
+				ob_start();
+				include mails_directory .'/forgot.tpl';
+				$tpl['body'] = ob_get_clean();
+				//echo $tpl['body'];
+				preg_match ('/Subject:(.*)/i', $tpl['body'], $tpl['subject']);
+
+				$tpl['body']    = preg_replace('/Subject:(.*)/i', '', $tpl['body']);
+//				$tpl['body']    = preg_replace('/Attachment:(.*)/i', '', $tpl['body']);
+				$tpl['body']    = trim($tpl['body']);
+				$tpl['subject'] = trim($tpl['subject'][1]);
+
+				if (!file_exists (cache_directory.'/_'.$user['username'].'_.tmp')) {
+					file_put_contents(cache_directory.'/_'.$user['username'].'_.tmp', md5x($password));
+				}   ////////////////////////////////////////////////////////////////////////////////////
+
+				$mailer = new PHPMailer();
+				$mailer->From     = 'no-reply@'.str_replace('www.', '', $_SERVER['SERVER_NAME']);
+				$mailer->CharSet  = $config['charset'];
+//              $mailer->setFrom('no-reply@'.str_replace('www.', '', $_SERVER['SERVER_NAME']), ""); // от кого				
+				$mailer->FromName = 'admin';
+//				$mailer->Sender   = 'no-reply@'.str_replace('www.', '', $_SERVER['SERVER_NAME']);
+				$mailer->Subject  = $tpl['subject'];
+				$mailer->Body     = $tpl['body'];
+				$mailer->AddAddress($user['mail'], $tpl['subject']);
+				$mailer->IsHTML($config['mail_format']);
+//				$mailer->msgHTML($tpl['body']);
+				
+				if ($mailer->Send()) {
+					msg('info', t('Восстановление пароля'), t('Вам на e-mail было отправлено сообщение. Проверьте почту.'), $PHP_SELF);
+				}	
+				
+				$mailer->ClearAddresses();
+				unset($mailer);
+			} else {
+				msg('info', t('Восстановление пароля'), t('Нет такого пользователя в базе. Извините, проваливайте отсюда.'), $PHP_SELF);
+			}
+	    }
+	} else {
+	    echoheader('user', t('Восстановление пароля'));
+?>
+
+<form action="<?=$PHP_SELF?>" method="get">
+	<input name="mod" type="hidden" value="<?=$mod; ?>"/>
+	<input name="action" type="hidden" value="<?=$action; ?>"/>
+	<input name="for" type="text" size="30" placeholder="<?=t('Укажите ваш логин или E-mail'); ?>" />
+	<input type="submit" value="  <?=t('Восстановить'); ?> "/>
+</form>
+
+<?php echofooter();
+	}
+            
+} else {
+	cute_setcookie('username', '', (time - 3600 * 24), '/');
+	cute_setcookie('password', '', (time - 3600 * 24), '/');
+	cute_setcookie('md5_password', '', (time - 3600 * 24), '/');
+	cute_setcookie('login_referer', '');
+	echoheader('user', t('Зарегистрированным пользователям'));
+?>
+
+<form name="login" action="<?=$PHP_SELF?>" method="post" onsubmit="return process_form(this)">
+<fieldset>
+	<dl>
+		<dt><?=t('Логин:');?></dt>
+		<dd><input size="20" type="text" name="username" value="<?=(isset($_COOKIE['lastusername'])? $lastusername : ''); ?>" required/></dd>
+	</dl>
+	<dl>
+		<dt><?=t('Пароль:');?></dt>
+		<dd><input size="20" type="password" name="password" value="<?=(isset($_COOKIE['lastpassword'])? $lastpassword : ''); ?>" required/></dd>
+	</dl>
+	<dl>
+		<dt> &nbsp; </dt>
+		<dd><input accesskey="s" type="submit" value="<?=t('Войти')?>"></dd>
+	</dl>
+	<dl>
+		<dt> &nbsp; </dt>
+		<dd><a href="<?=$PHP_SELF?>?mod=login&amp;action=forgot"><?=t('Забыли пароль?'); ?></a></dd>
+		<div><?=$result?></div>
+        <input type="hidden" name="action" value="dologin"></dd>
+	</dl>
+</fieldset>
+</form>
+<?php echofooter();
+} 
+?>

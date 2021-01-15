@@ -1,0 +1,287 @@
+<?php
+
+if (empty($action))
+{
+	echoheader('addnews', t('Добавить запись'));
+?>
+
+<ul id="tabs">
+	<li><a href="#short"><?=t('Короткая версия')?></a></li>
+	<li><a href="#full"><?=t('Полная версия')?></a></li>
+	<li><a href="#more"><?=t('Дополнительно')?></a></li>	
+</ul>
+
+<br clear="both"> 
+<br clear="both"> 
+
+<form method="post" id="addnews" action="<?=$PHP_SELF; ?>" enctype="multipart/form-data">
+	<table width="100%">
+		<tr>
+			<td valign="top">
+				<fieldset id="title">
+					<legend><?=t('Заголовок') ?></legend>
+					<input type="text" id="TitleVal" name="title" />
+				</fieldset>
+			
+				<fieldset class="tab fade" id="short">
+					<legend><?=t('Прикрепить изображение') ?></legend>
+					<input type="file" id="xhrField" name="Filedata[]" accept="image/*" multiple />
+				    <input type="button" id="xhrOk" value=" OK " style="display:none;" />
+					<div id="xhrStatus"></div><br />
+
+					<legend><?=t('Короткая версия'); ?></legend>
+					<?=run_filters('new-advanced-options', 'short') ?>
+					<textarea name="short" class="story"></textarea>
+				</fieldset>
+	
+				<fieldset class="tab fade" id="full">
+					<legend><?=t('Полная версия'); ?></legend>
+					<?=run_filters('new-advanced-options', 'full') ?>
+					<textarea name="full" class="story"></textarea>	  
+				</fieldset>
+
+				<fieldset class="tab fade" id="more">
+
+				    <legend><?=t('Краткое описание')?></legend>
+					<textarea name="description" rows="1" size="100" placeholder="Meta description"></textarea>
+					<hr style="height:0" />
+					<legend><?=t('Ключевые слова')?></legend>
+					<textarea name="keywords" rows="1" size="100" placeholder="Meta keywords"></textarea>
+					<hr style="height:0" />
+					<legend><?=t('Медиа файлы')?></legend>
+					<input type="text" id="attachment" size="100" name="attach" placeholder="Ссылка с Youtube. Например https://youtu.be/MUNIgCB8A18" />
+				</fieldset>
+            
+				<!-- кнопки -->
+				<fieldset id="actions">
+					<legend><?=t('Действие'); ?></legend>
+					<input type="submit" value="<?=t('Добавить'); ?>" accesskey="s" />
+					<!--input type="button" onclick="preview('addnews');" value="<?//=t('Предварительный просмотр'); ?>" accesskey="p"-->
+				</fieldset>
+		
+		
+		<td valign="top" width="270">
+			
+			<fieldset id="options">
+				<legend><?=t('Настройки'); ?></legend>
+				<?=run_actions('new-advanced-options'); ?>    
+			</fieldset>
+				<input type="hidden" name="mod" value="addnews">
+				<input type="hidden" name="action" value="doaddnews">
+	</table>
+</form>
+
+<script type="text/javascript" src="../themes/js/jquery.js"></script>
+<script type="text/javascript" src="js/redactor.js"></script>
+<script type="text/javascript">
+	$.noConflict();
+	jQuery(".story").redactor({
+		imageUpload:  '/ajax/image.upload.php', 
+		fileUpload:   '/ajax/files.upload.php', 
+		imageGetJson: '/uploads/json.images.php'
+	});
+</script>
+
+<?php echofooter();
+}
+////////////////////////////////Do add News to DB/////////////////////////////////
+if ($action == 'doaddnews'){
+
+	if(($added_time = strtotime($day.' '.$month.' '.$year.' '.$hour.':'.$minute.':'.$second)) == -1){
+		$added_time = time; //$added_time = $time->getTimeStamp();
+	}
+
+	//$id = $sql->lastInsertId('news');
+	//$url   = $url   ? mb_namespace($url) : mb_namespace(totranslit($title));
+	//$title = $title ? replace_news('add', $title) : 'Post '.langdate('d.m.Y', time);
+
+	$values['date']   = $added_time;
+	$values['author'] = $member['username'];
+	$values['title']  = $title ? replace_news('add', $title) : 'Post '.langdate('d.m.Y', time);
+	$values['url']    = $url ? mb_namespace($url) : mb_namespace(totranslit($title));
+	$values['hidden'] = cute_get_rights('approve_news');
+	$values['category'] = $cat ? join(',', array_keys($cat)) : 0;
+
+	if (isset($_FILES['Filedata']) || !$_FILES['Filedata']['error'])
+	{       //echo $_FILES['Filedata'];
+		$n = 0;
+        foreach ($_FILES['Filedata'] as $k => $l){
+            foreach ($l as $i => $v) {
+				if (!array_key_exists($i, $files))
+                   $files[$i]		= [];
+                   $files[$i][$k] 	= $v;
+            }
+        }
+		
+		foreach ($files as $file)
+		{
+			$n++; 
+			$handle = new classes\Upload($file);  
+ 
+			if ($handle->uploaded)
+			{
+				$handle->file_name_body_pre = 'post_';
+				$handle->file_new_name_body = $url;
+				$handle->forbidden	= ['application/*'];
+				$handle->allowed 	= ['image/*']; 
+				
+				if($config['poster_ext'])
+				{
+					$handle->image_convert  = $config['poster_ext'];			
+				}
+				
+				$handle->process(UPLOADS . '/posts');
+			
+				if ($handle->processed){ 
+					$images[$n] 	 = $handle->file_dst_name;				
+					$values['image'] = reset($images);	
+					
+				} else 	$handle->error;
+			} 
+			
+			$handle->Clean();
+        }
+	}
+	
+	if ( !$id = $sql->insert(['news', 'values' => $values]) ) {
+		die ('None query');
+	}
+
+	$values  = [] ;
+	$values['id']  		   = $id;
+	$values['description'] = $description !== '' ?
+							 replace_news('add', strip_tags($description)) : 
+							 replace_news('add', strip_tags(mb_substr($short, 0, 200)));
+	$values['keywords']    = replace_news('add', strip_tags($keywords));
+	$values['short']       = replace_news('add', $short);
+	$values['full']        = replace_news('add', $full);
+	
+	if (!empty($_POST['attach']))
+	{
+		$attach = $cute->value ($_POST['attach']);
+		$data['m'] = (strpos($attach, 'https://youtu') OR substr($attach, -4) === '.mp4')
+		? 'video'
+		: 'audio';
+		
+		$data['uid']     = 'attach'; //uid: 'attach1',
+		$data['file']    = $attach ; //uid: 'attach1',
+		$data['poster']  = count($images) ? reset($images) : '';
+		$data['comment'] = $description ? replace_news('add', $description) : $title;
+		$data = $cute->json_encode ($data);
+		$values['attach']  = $data;
+	}
+	
+	$sql->insert(['story', 'values' => $values]);
+
+	$publications = $sql->count(['news', 'where' => ["author = $member[username]"]]);
+	$sql->update(['users', 'where'  => $member['id'], 'values' => ['publications' => $publications]]);
+	
+	run_actions('new-save-entry');
+	
+    if ( $config['send_mail_upon_new'] and $config['admin_mail'] ){
+	
+        ob_start();
+        include mails_directory.'/new_post.tpl';
+        $tpl['body'] = ob_get_clean();
+		
+        preg_match('/Subject:(.*)/i', $tpl['body'], $tpl['subject']);
+		preg_match('/Attachment:(.*)/i', $tpl['body'], $tpl['attachment']);
+		
+        $tpl['body']       = preg_replace('/Subject:(.*)/i', '', $tpl['body']);
+        $tpl['body']       = preg_replace('/Attachment:(.*)/i', '', $tpl['body']);
+        $tpl['body']       = trim($tpl['body']);
+        $tpl['subject']    = trim($tpl['subject'][1]);
+        $tpl['attachment'] = trim($tpl['attachment'][1]);
+		
+		$mailer = new classes\PHPMailer; 
+		$mailer->From    = 'no-reply@'.str_replace(['www.', 'http://'], '', $config['http_script_dir']);
+		$mailer->CharSet = $config['charset'];
+		$mailer->Sender  = $config['admin_mail'];
+		$mailer->Subject = $tpl['subject'];
+		$mailer->Body    = $tpl['body'];
+        $mailer->AddAddress($config['admin_mail']);
+		$mailer->IsHTML (true);
+		if ($mailer->Send())
+		{
+			unset ($mailer);
+		}
+	}
+	//echo cute_get_link ($post);
+    msg('info', t('Новость добавлена'), t('Новость "%title" была успешно добавлена<br /><br /><a href="%url">Отредактировать новость</a>', ['title' => $title, 'url' => $PHP_SELF.'?mod=editnews&amp;id='.$id]));
+}
+
+/*
+$sql->insert(['attachment', 'values' => [
+		'post'   => $id, 
+		'type'   => $type, 
+		'file' 	 => $handle->file_dst_name, 
+		'width'  => $handle->image_dst_x, 
+		'height' => $handle->image_dst_y,
+		'ext'    => $handle->file_dst_name_ext, 
+		'size'	 => $handle->file_src_size
+	]
+]);
+
+
+//410
+{"m":"video","uid":"attach","file":"https://youtu.be/muVpFw3cmdA","poster":"","comment":"Запрещенное кино: 10 фильмов, которые никогда не увидит российский зритель. Anonyma"}
+*/
+					
+
+ /*  foreach ($files as $file){ 
+			$n++;
+			$handle = new Upload($file);  
+ 
+            if ($handle->uploaded) {
+	
+				$handle->file_new_name_body = $url; 	///   2var
+				$handle->allowed 			= array('image/*'); ///   2var
+				$handle->forbidden          = array('application/*');
+				$handle->image_convert 		= 'jpg';			
+				$handle->process(upload_files); //upload_files.'/Gallery'
+			
+				if($handle->processed){ 
+				    
+					if($n == 1){ 
+						$values['image']  = $handle->file_dst_name;
+						//echo $values['image'];
+					}
+					echo $handle->file_dst_name;
+					$values = array(
+						'post_id'   => $id, 
+						'post_type' => $type, 
+						'file' 		=> $handle->file_dst_name, 
+						'width'     => $handle->image_dst_x, 
+						'height'    => $handle->image_dst_y,
+						'ext'  		=> $handle->file_dst_name_ext, 
+						'size'		=> $handle->file_src_size
+					);
+					
+					//$sql->insert(array('attach', 'values' => $values));
+					
+					$handle->clean();
+				
+				} else $handle->error;
+			} 
+        }
+    }*/
+	
+	
+	/*if (isset($_FILES['newsicon']) and !$_FILES['newsicon']['error']){
+
+		$ext      = end($ext  = explode('.', $_FILES['newsicon']['name']));
+		$type     = end($type = explode('/', $_FILES['newsicon']['type']));
+		$tmp_name = $_FILES['newsicon']['tmp_name'];
+		$image = preg_replace('/(.*?).'.$ext.'$/i', $url, $_FILES['newsicon']['name']).'.'.$ext;
+			
+		$cute->allowed_extensions($type) ? move_uploaded_file($tmp_name, upload_files.'/'.$image) :
+		msg('error', t('Новость не добавлена'), t('Прикрепляемый вами файл не является картинкой. <br><br><a href="%url">Вернуться назад</a>', array('url' => $PHP_SELF.'?mod=addnews')));
+		
+		$make_thumb   = !empty($make_thumb) ? $make_thumb : $config['newsicon'];
+		if ($make_thumb){  //$kadr = ($square ? 'square' : 'normal');      
+			@img_resize(upload_files.'/'.$image, upload_files.'/thumbs/'.$image, $make_thumb);
+		} 
+	}*/
+	
+    
+?>
