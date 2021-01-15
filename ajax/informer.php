@@ -1,0 +1,9 @@
+[
+    {"lang":"ru"},
+    {"lang":"de"},
+    {"lang":"se"},
+    {"lang":"en"},
+    {"lang":"fr"},
+    {"lang":"ee"},
+    {"lang":"lt"}
+]
