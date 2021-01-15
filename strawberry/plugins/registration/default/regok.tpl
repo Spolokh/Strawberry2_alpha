@@ -1,0 +1,1 @@
+<span style="font-family:Georgia; font-size:12px; color:#00CC00">{lang.Ok}</span>
