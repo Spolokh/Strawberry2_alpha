@@ -14,12 +14,10 @@
 		<div id="orderFormResult" style="padding:4px;"></div>
 	</fieldset>
 </form>
-
 <script>
 	$('orderForm').on('submit', function(e)
 	{ 
 		var file = this.getAttribute('action');
-		//var post = this.getAttribute('method');
 		var form = new FormData(this);
 		var ajax = getXmlHttp();
 		var time = 3000;
