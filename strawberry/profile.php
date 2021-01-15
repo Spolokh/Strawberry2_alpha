@@ -24,13 +24,14 @@ if (isset($action) and $action == 'editprofile')
 	foreach ($sql->select(['users', 'select'=> ['password'], 'where'=> $member['id']]) as $row)
 	{	
 		if ($editpass != '') {
-			$row['password'] 	  = md5x($editpass);
-			$_SESSION['password'] = $row['password'];
+			$row['password'] 	= md5x($editpass);
+			$_SESSION['password'] 	= $row['password'];
 			cute_setcookie('password', $row['password']);
 		}
     	}
 	
-	if(($added_time = strtotime($day.' '.$month.' '.$year)) == -1) {
+	if(($added_time = strtotime($day.' '.$month.' '.$year)) == -1)
+	{
 		$added_time = time;
     	}
 
@@ -109,10 +110,10 @@ if (isset($member['contacts']) AND CN::isJson($member['contacts']))
 	$contact = json_decode($member['contacts']);
 
 	$template->set('city',  $contact->city,  $module)
-			 ->set('page',  $contact->page,  $module)
-			 ->set('skype', $contact->skype, $module)
-			 ->set('phone', $contact->phone, $module)
-		;
+		 ->set('page',  $contact->page,  $module)
+		 ->set('skype', $contact->skype, $module)
+		 ->set('phone', $contact->phone, $module)
+	;
 }
 	
 echo $template->compile($module, true);
