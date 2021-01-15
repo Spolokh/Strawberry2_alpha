@@ -2,11 +2,11 @@
 
 include_once 'head.php';
 
-$module = 'profile';
-$action = $_POST['action'] ?? NULL;
-
 use classes\Upload;
 use classes\Template;
+
+$module = 'profile';
+$action = $_POST['action'] ?? NULL;
 
 if (isset($action) and $action == 'editprofile')
 {
