@@ -1,0 +1,63 @@
+#DirectoryIndex index.php
+#AddDefaultCharset UTF-8
+ErrorDocument 404 /404.php
+<IfModule mod_rewrite.c>
+RewriteEngine On
+#Options +FollowSymlinks
+RewriteBase /
+# [home] post
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] blog
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] category
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] author
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] user
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] day
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] month
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] year
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] keywords
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] skip
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] page
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] cpage
+# [wrong rule] 
+RewriteRule ^(/?)+$ index.php [QSA,L]
+# [home] doIt
+
+RewriteRule ^(fave|search|users|video|blog|mail|map|profile|registration)(/?)+$ index.php?go=$1 [QSA,L]
+# [rss.php] post
+# [wrong rule] 
+RewriteRule ^(/?)+$ /rss.php [QSA,L]
+# [rss.php] category
+# [wrong rule] 
+RewriteRule ^(/?)+$ /rss.php [QSA,L]
+# [rss.php] user
+# [wrong rule] 
+RewriteRule ^(/?)+$ /rss.php [QSA,L]
+# [print.php] post
+# [wrong rule] 
+RewriteRule ^(/?)+$ /print.php [QSA,L]
+# [trackback.php] post
+# [wrong rule] 
+RewriteRule ^(/?)+$ /trackback.php [QSA,L]
+RewriteRule ^do/([_0-9a-zA-Z-]+)(/?)+$ /strawberry/do.php?action=$1 [QSA,L]
+</IfModule>
