@@ -1,0 +1,12 @@
+<!-- выводим страницы -->
+<!-- если пользуем Post Type и хоть когда-то выбирали "page" :) -->
+
+<b>Страницы</b>
+<ul>
+<?
+$static['sort']     = ['level', 'ASC'];
+$static['type']     = 'page';
+$static['template'] = 'Headlines';
+include rootpath.'/show_news.php';
+?>
+</ul>

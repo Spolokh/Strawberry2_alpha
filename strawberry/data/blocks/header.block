@@ -1,0 +1,7 @@
+
+<form id="searchForm" action="<?=cute_get_link(['go' => 'search'], 'go')?>" class="clearfix">
+	<a class="brand" title="<?=$config['home_title']?>" href="<?=$config['http_script_dir']?>">
+		<?=$config['home_title']?>
+	</a>
+	<input type="search" name="search" value="<?=($search ? $search : '')?>" placeholder="Найти" />
+</form>

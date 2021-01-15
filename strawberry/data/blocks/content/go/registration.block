@@ -1,0 +1,12 @@
+<!-- вывод основного контента -->
+<?php // show registration form (plugin User.Registration)
+
+$config['regLogin']     = 20;
+$config['registration'] = true;
+
+if (!class_exists('userRegistration') or !$config['registration'])
+{
+	return $cute->msg('Achtung!', t('Плагин не подключён. Обратитесь к администратору сайта.'));
+}
+
+echo (new userRegistration($config))->showForm();

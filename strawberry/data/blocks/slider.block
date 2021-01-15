@@ -1,0 +1,22 @@
+<ul class="show">
+	<!--start list-->
+	<li class="slide" data-caption="" data-slide-interval="">
+	    <a href="/blog/volyn-v-moskve.html">
+			<img src="/uploads/thumb.php?src=uploads/slideshow/post_slideshow1.jpg&w=1024&h=390&s=1"
+			 alt="В кинотеатре Пять звезд впервые на российских экранах появится запрещенный в Украине фильм о волынской резне."/>
+		</a>
+	</li>	
+	<li class="slide" data-caption="" data-slide-interval="">
+		<a href="/blog/anonyma.html">
+			<img src="/uploads/thumb.php?src=uploads/posts/post_dsfsefe_1.jpg&w=1024&h=390&s=1"
+			 alt="Запрещенное кино: фильмы, которые никогда не увидит российский зритель. «Anonyma»."/>
+	    </a>
+	</li>
+	<li class="slide" data-caption="" data-slide-interval="">
+		<a href="/article/ot-kitezha-do-transvalya.html">
+			<img src="/uploads/thumb.php?src=uploads/posts/post_Den_blomstertid_nu_kommer.jpg&w=1024&h=390&s=1"
+			 alt="Во имя спасения (Den blomstertid nu kommer)"/>
+		</a>
+	</li>
+	<!--//stop list 994-->
+</ul>

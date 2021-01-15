@@ -1,0 +1,30 @@
+<?php
+
+if (!$categories) {
+	return;
+}
+
+if (!$map = $cache->get('map', $cache_uniq, 'block')) { // кэширование
+	ob_start();
+	$query = $sql->select([ 
+		'news', 'select' => ['id', 'title', 'url', 'date', 'author', 'category', 'type'], 'where' => ['hidden = 0']
+	]);
+?>
+
+<h2>Карта сайта:</h2>
+<?php foreach ($categories as $cat) { ?>
+	<h3><a href="javascript:Effect.toggle('<?=$cat['url']; ?>', 'blind')"><?=$cat['name']; ?></a></h3>
+		<ul id="<?=$cat['url']; ?>" style="display:none">
+<?php foreach ($query as $row) {
+		if (in_array($cat['id'], explode(',', $row['category']))) { 
+?>
+			<li><a href="<?=cute_get_link($row) ?>"><?=replace_news('show', $row['title'])?></a></li>  
+<?php
+		} 
+	}	
+	echo '</ul>';
+	}   
+  
+	$map = $cache->put(ob_get_clean());
+}     
+echo $map;

@@ -1,0 +1,13 @@
+<?php
+
+include $is_main ? blocks_directory.'/main.block' : rootpath.'/show_news.php'; 
+
+if (isset($post['category']) /*&& $post['type'] != 'page' && $post['type'] != 'php'*/)
+{
+	//$static['type']   = $post['type']; 
+	//$static['number']  	= $config['news_number'];
+	$static['category'] = $post['category'];
+	$static['template'] = 'Headlines';
+	$static['hide_open_post'] = true;
+	//include rootpath . '/show_news.php';
+}

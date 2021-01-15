@@ -1,0 +1,9 @@
+<table class="panel" id="user_list">
+<?php	// show list of the users (add-on)
+include rootpath.'/show_users.php';
+?>
+</table>
+ 
+<?=(new classes\Pagination($count, $number))->get()?>
+ 
+

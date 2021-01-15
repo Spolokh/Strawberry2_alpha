@@ -1,0 +1,33 @@
+<!--controls,protip,carousel-->
+<script type="text/javascript" src="/themes/js/scriptaculous.js?load=effects,builder,protoshow,protoform"></script>
+<script type="text/javascript" src="/themes/js/maskedinput.js"></script>
+<script type="text/javascript" src="/themes/js/modalbox.js"></script>
+<script type="text/javascript" src="/themes/js/functions.js"></script>
+<script type="text/javascript" src="/themes/js/tools.js"></script>
+<?php if (isset($post['id'])) { ?>
+<script type="text/javascript" src="//yastatic.net/share2/share.js"></script>
+<script type="text/javascript" src="/themes/js/post.js"></script>
+<?php } ?>
+<script type="text/javascript" src="/themes/js/script.js"></script>
+<script type="text/javascript">
+document.observe("dom:loaded", function() {
+
+<?php if ($is_main) { ?>
+	var myshow = new protoShow('myshow', {
+		captions: true,
+		interval: 5000,
+		navigation : true,
+		pauseOnHover: true
+		//, transitionType: 'slide'
+	});
+<?php 
+} //http://shpargalkablog.ru/2013/06/youtube.html
+?>
+/*	$$('a[title]').each(function(el){
+		new Protip(el);
+	});*/
+<?php if ($EmailForm === true) { ?>
+	new Protoform('validateForm', {url: DS + AJAX + DS + 'ajax.mails.php'}); 
+<?php } ?>
+});
+</script>

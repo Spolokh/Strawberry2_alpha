@@ -1,0 +1,53 @@
+<style>
+.list 
+  {padding:0px; 
+   background:#f7f7f7;}
+
+.list.banners h4
+{
+color:#FFF; padding:5px 8px;
+background:#3c6498; font:italic 14px Arial;
+}
+
+.list.banners ul
+{
+ padding:15px 0;
+}
+
+.list.banners ul li
+{
+ /*padding:5px;*/
+ margin-bottom:10px;
+}
+
+.list.banners ul li img
+{
+ border:1px solid #DDD;
+}
+
+</style>
+
+<div class="list banners">
+<h4><b>Наши бренды:</b></h4>
+<ul>
+ 
+  <li><img src="/cp/data/upimages/Banners/alpha-industries.jpg"></li>
+  <li><img src="/cp/data/upimages/Banners/Erik2.jpg"></li>
+</ul>
+</div>
+
+<?php
+/*$countris = array(
+		$cute->username => array('options' => t('настройки'), 'mailbox', 'cz'),
+		'America' => array('us', 'ca', 'me'),
+		'Exit'   =>  array()
+);
+
+
+while(list($k) = each($countris)){
+	echo ("<a href=#>$k:</a><br/>\n");
+	while(list($link, $v) = each($countris[$k])){
+		echo(" - <a href=$link>$v</a><br/>\n");
+	}
+}*/
+?>

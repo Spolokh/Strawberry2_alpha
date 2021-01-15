@@ -1,0 +1,13 @@
+<h3>Полезно</h3>
+<ul>
+	<li><a href="<?=$config['http_script_dir'] .DS ;?>cp">Админка</a></li>
+<?php if (cute_get_rights('ddb', 'read')) { ?>
+	<li><a href="?ddb=edit">Редактировать блоки</a></li>
+	<li><a href="?ddb=html">Смотреть html</a></li>
+<?php } ?>
+	<li><a href="<?=$config['http_script_dir']?>/cp/docs">Документация</a></li>
+	<li><a href="/do/form" role="button" data-target="myModal" data-toggle="modal" Title="Заказать звонок">
+			Модальное окно
+		</a>
+	</li>
+</ul>

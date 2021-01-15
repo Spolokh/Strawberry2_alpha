@@ -1,0 +1,20 @@
+<?php
+
+//получаем id категории
+$catId  = isset($_GET['category']) ? CN::getId($categories, $_GET['category']) : 0;
+// получаем url категории
+$catUrl = $catId ? $categories[$catId]['url'] : '';
+//название,id, описание, etc
+$catArr = $catId ? $categories[$catId] : [];
+
+$url = 'http://ip-api.com/json';
+$ip  = '158.255.189.57';
+
+//echo '<li>'. $cute->getGeoApi($ip)->countryCode;
+//echo '<li>'. $cute->getGeoApi($ip)->country;
+//echo '<li>'. $cute->getGeoApi($ip)->region;
+//echo '<li>'. $cute->getGeoApi($ip)->regionName;
+//echo '<li>'. $cute->getGeoApi($ip)->timezone;
+//$media = new PluginSettings('image_manager');
+//$width = $media->settings['video_width'];
+//$height= $media->settings['video_height'];

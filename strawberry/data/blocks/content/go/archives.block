@@ -1,0 +1,2 @@
+<!--plugin CN Functions-->
+<?=cn_archives() ?>

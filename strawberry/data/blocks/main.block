@@ -1,0 +1,12 @@
+<style>
+
+</style>
+
+<?=new classes\Main($config)?>
+
+<ul id="tabs" class="mini2" style="display:none">
+	<li><a href="#tab1">Первая полоса</a></li>
+	<li><a href="#tab2">Последние новости</a></li>
+	<li><a href="#tab3">Видео</a></li>
+	<li><a href="#tab4">Контакты</a></li>
+</ul>

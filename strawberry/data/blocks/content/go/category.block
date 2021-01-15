@@ -1,0 +1,42 @@
+<style>
+#menu UL {
+  width: 180px;		 /* Ширина меню */
+  list-style: none;	 /* Для списка убираем маркеры */
+  font-size: 11pt	 /* Размер названий в пункте меню */
+}
+#menu UL LI  {
+  position: relative /* Подпункты позиционируются относительно */
+}
+#menu LI UL {
+  padding: 0 0 0 20px;
+  /*position: absolute;	*/	/* Подменю позиционируются абсолютно */
+ /*display: none;*/	/* Скрываем подменю */
+  /*top: 1px;*/			/* По высоте положение подменю исходное */
+  /*left: 179px;	*/		/* Сдвигаем подменю вправо */
+  /*z-index: 1	*/		/* Основное меню находится ниже подменю */
+}
+
+#menu LI A {
+	color: #666;			/* Цвет текста */
+	margin-top: 1px;
+	width: 100%;			/* Ссылка на всю ширину пункта */
+	padding: 4px;			/* Поля вокруг надписи */
+	display: block;		/* Ссылка как блочный элемент */
+	text-decoration: none;	/* Подчеркивание у ссылок убираем */
+	border: 1px solid #ccc;	/* Рамка вокруг пунктов меню */
+}
+#menu LI UL LI A {
+  z-index: 2; background: white  /* Для подпунктов рисунок убираем */
+}
+#menu LI A:hover {
+  color: maroon;		/* Цвет текста активного пункта */
+  background-color: #f0f0f0	/* Цвет фона активного пункта */
+}
+#menu LI:hover UL, LI.over UL { 
+  display: block  /* При выделении пункта курсором мыши отображается подменю */
+}
+</style>
+
+<nav id="menu">
+	<?=CN::getTree($categories); ?>
+</nav>

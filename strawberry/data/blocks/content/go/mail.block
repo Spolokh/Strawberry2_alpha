@@ -1,0 +1,21 @@
+<style> /*textarea:required, input:required {}	*/	
+	.protoform-message {padding:6px 0 6px 205px}.protoform-message li {color:red; padding:3px}
+</style>
+<?php
+
+$EmailForm = true;
+
+ob_start();
+include forms_directory.'/EmailForm.tpl';
+$output = ob_get_clean();
+$output	= str_replace('[SESSID]', session_id(), $output);
+
+if ($is_logged_in and isset($member['id'])) {
+	$output = preg_replace('/\[if-logged\](.*?)\[\/if-logged\]/is', '', $output);
+}
+
+$output = str_replace('[capcha]',  '', $output);
+$output	= str_replace('[/capcha]', '', $output);
+$output	= str_replace('[if-logged]',  '', $output);
+$output	= str_replace('[/if-logged]', '', $output);
+echo $output;

@@ -1,0 +1,9 @@
+<?php
+
+if ( !($member || $is_logged_in) ) {   
+    return $cute->msg( 'Achtung!',  t('Необходима авторизация на сайте') );
+}
+
+$profile = true;
+$module = 'profile';
+include rootpath . '/profile.php';

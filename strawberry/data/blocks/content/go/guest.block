@@ -1,0 +1,156 @@
+<?php
+
+$groups_arr[0] = '...';
+foreach ($usergroups as $groups){
+    $groups_arr[$groups['id']] = $groups['name'];
+} 
+
+echo makeDropDown($groups_arr, 'usergroup');
+?>
+
+<div>Select</div>
+<select id="usersname" disabled>
+<option value="0">Пользователь</option>
+</select>
+
+<div id="info"></div>
+
+<script>
+
+$('usergroup').on('change', function(){
+
+    new Ajax.Request('/ajax/json.php',  {
+		parameters: {usergroup: $F('usergroup')},
+		//requestHeaders: {Accept: 'application/json'},
+		onSuccess: function(data) {  
+			//var json = transport.responseJSON; 
+			//var text = transport.responseText;
+			div = '<option value="0">Выбрать</option>';
+			data.responseJSON.each(function(e){  
+				div += '<option value="' +e.id+ '">' +e.username+ '</option>' ;
+			}); $('usersname').update(div).enable();
+		},
+
+		onFailure: function(data) {
+			$('info').update(data.responseText);
+		}
+	});
+});
+</script>
+
+<style>
+div.select {
+-moz-background-clip:padding;
+	background-clip: padding-box;
+        float:left;
+	-webkit-appearance:none;
+	background:white;
+	border:1px solid;
+	border-color:#848484 #c1c1c1 #e1e1e1;
+	 
+	outline: 0;
+	color: #666;
+	padding: 4px;
+	margin: 5px 0;
+	font:15px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	vertical-align:middle;
+	
+	box-shadow:inset 0 4px 6px 1px #eee;
+	-moz-box-shadow:inset 0 4px 6px 1px #eee; 
+	-webkit-box-shadow:inset 0 4px 6px 1px #eee;
+	
+	-webkit-border-radius:1px;
+	-moz-border-radius:1px;
+	-ms-border-radius:1px;
+	-o-border-radius:1px;
+	border-radius:1px;
+        position: relative;
+}
+
+div.select:after
+{
+content:'\f0d7'; cursor: pointer;padding: 0 4px;
+font: normal 14px  FontAwesome;
+}
+
+div.select ul {
+padding: 1px;
+position: absolute;
+top:25px; left:-1px;right:-1px;
+background:white;
+border:1px solid;
+border-color:#fff #c1c1c1 #e1e1e1;
+border-top:none;
+}
+
+div.select ul a {
+  display: block; padding:  4px;
+}
+
+div.select ul a:hover{
+ background: #f7f7f7;
+}
+
+</style>
+
+
+<div class="popover popover-up">
+	<h6>Popover Top</h6>
+	<p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+</div>
+
+<hr />
+
+
+<!--div class="select" onClick="Effect.toggle(this.down('ul'), 'blind', {duration: 0.2});">Выбрать раздел
+     <ul style="display:none;">
+                <li><a href="#">Подменю 1</a></li>
+	        <li><a href="#">Подменю 2</a></li>
+		<li><a href="#">Подменю 3</a></li>
+		<li><a href="#">Подменю 4</a></li>
+     </ul>
+</div-->
+<hr />
+
+<br/>
+<br/>
+<br/>
+<br/>
+ 
+<span class="switch switch-square">
+	<input type="checkbox" id="s2" />
+	<label for="s2" data-on="Да" data-off="Нет"></label>
+</span>
+
+<hr />
+
+<div class="button-group">
+	<a href="#" class="button button-prev">Previous</a>
+	<a href="#" class="button button-next">Next</a>
+</div>
+
+      <div class="button-group">
+        <a href="#" class="button">Account</a>
+        <a href="#" class="button active">Password</a>
+        <a href="#" class="button">Profile</a>
+        <a href="#" class="button">Apps</a>
+      </div>
+
+
+<hr />
+
+<div class="button-dropdown">
+	<input type="text" name="Filedata" size="45" id="XhrField">
+	<a class="button toggle">More</a>
+</div>
+
+<hr />
+
+<div class="button-dropdown">    
+		<a href="#" class="button">Dropdown</a>
+        <a class="button toggle">More</a>
+        <ul class="dropdown">
+          <li><a href="#">Copy</a></li>
+          <li><a href="#">Paste</a></li>
+        </ul>
+</div>

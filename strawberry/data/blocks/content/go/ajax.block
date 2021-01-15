@@ -1,0 +1,136 @@
+<script type="text/javascript" src="js/accordion.js"></script>
+<script type="text/javascript">
+
+setInterval(function(){
+  var imgs = $$('ul.fadein li'), 
+  visible  = imgs.findAll(function(img){ return img.visible(); });
+  if(visible.length>1) visible.last().fade({duration: 1.5});
+    else imgs.last().appear({ duration: 1.5, 
+      afterFinish: function(){ imgs.slice(0,imgs.length-1).invoke('show');  } });
+}, 5000);
+</script>
+<style>
+div#myaccordion{
+	padding: 5px;
+	background: #21201f;
+}
+
+div.accordion {
+	{width: 630px; position: relative} /* required for bounding */
+
+div.accordion-toggle{
+	position: relative; /* required for effect */
+	z-index: 10;		/* required for effect */
+	background: #3f3c38;
+	color: #fff; 
+    font: bold 13px Arial serif;	
+	cursor: pointer;
+	margin-bottom: 1px;
+	padding: 6px 14px 6px 14px;
+	border-top: 1px solid #5d5852;	
+}
+
+div.accordion-toggle:hover, div.accordion-toggle-active{
+	background: #6d493a;
+	border-top: 1px solid #a06b55;
+}
+
+div.accordion-content
+	{padding: 0; color: #c4bab1; overflow: hidden;	/* required for effect */ background: #302e2c}
+
+div.accordion-content p
+	{text-align: justify; margin: 9px 10px 9px 14px}
+	
+.fadein {position:relative;  height:330px; width:500px }
+.fadein li { position: absolute;}
+.fadein a {color: #FFF; background: #000; width:190px; font-size: 15px; position: absolute; left: 0; bottom: 0; padding: 5px}
+
+</style>
+<div id="myaccordion" class="accordion">
+	<div class="accordion-toggle">Main</div>
+	<div class="accordion-content">
+		<p>
+			Йоль-это главный священный праздник скандинавских и германских народов,ночь солнцестояния, самая длинная в году. Он имеет языческие корни, переродился в христианскую эпоху, но отмечается и по сей день. В Йоль вместе собирались все члены клана, чтобы встретить солнце, восставшее из мрака, и узреть возрожденный мир. Это великий пир, и по традиции в Йоль веселится стар и млад, особенно молодые парни и девушки
+		</p>
+	</div>
+	<div class="accordion-toggle">Why Use Us</div>
+	<div class="accordion-content">
+		<p>
+			Ночью тысячи людей собрались на юге Англии, чтобы отметить самый длинный день в году. Как сообщили представители властей страны, более 30 тыс. человек приехали на руины древнего Стоунхенджа для празднования длиннейшего дня года в северном полушарии - дня летнего солнцестояния, передает Би-би-си.
+		</p>
+		<p>
+			В 2009 году фестиваль Древнерусской истории и культуры Городецкое Гульбище пройдет уже в третий раз. В этом году фестиваль расположится в Подольском районе Московской Области на территории «Славянского кремля» на реке Рожайке близ села Валищево. Для гостей Гульбище распахнет свои двери с 8 по 12 июля.
+		</p>
+	</div>
+	<div class="accordion-toggle">Our Prices</div>
+	<div class="accordion-content">
+		<p>
+		In posuere velit sit amet tortor. Donec elementum ipsum at ante luctus elementum. Duis varius dolor a tortor. Donec mi. Phasellus posuere. Mauris enim erat, commodo et, porta quis, consequat quis, nibh. Maecenas convallis eleifend ante. Phasellus metus metus, tempor sed, rhoncus ac, feugiat a, ante. Morbi sit amet ipsum. Cras eu leo quis pede condimentum tempor. Curabitur dictum elit sed lacus. Sed tortor magna, euismod non, mollis a, egestas nec, quam. Fusce porttitor porttitor nunc. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Fusce faucibus, ipsum vel consequat sodales, odio nulla pretium elit, sit amet tempor magna dolor vitae tellus. Quisque odio.
+		</p>
+	</div>
+</div>
+
+<div style="padding: 10px; cursor: pointer" onClick="window.location='http://nzpv.ru/word'">   
+<p id="textrotator"><img src="images/ajax-loader.gif" align="absmiddle"></p>
+</div>
+
+<ul class="fadein">
+  <li><img src="http://farm3.static.flickr.com/2531/4121218751_ac8bf49d5d.jpg"><a>rueir</a></li>
+  <li><img src="http://farm3.static.flickr.com/2597/4121218611_040cd7b3f2.jpg"><a>ieredfv</a></li>
+  <li><img src="http://farm3.static.flickr.com/2610/4148988872_990b6da667.jpg"><a>eseorer</a></li>
+</ul>
+
+
+class Singleton{
+
+    private static $instance = null;
+	private $config = [];
+
+    private function __construct($config = []){
+		
+	    //$this->config = $config; 
+		echo " ".$config['language'];
+    }
+
+    public static function run(){
+
+		if (self::$instance === null){
+            self::$instance = new self();
+
+        }
+		return self::$instance;
+    }
+
+    public function change($new_val){
+        echo $new_val;
+    }
+
+    public function printme(){
+        echo "dgdgdgd ";
+    }
+	
+	private function __clone(){
+	}
+  
+	private function __wakeup(){
+		throw new Exception("Cannot unserialize a singleton.");
+	}
+
+}
+
+
+//$a = Singleton::run();
+//$b = Singleton::run($config);
+
+//$a = new Singleton();
+//$b = new Singleton();
+//$c = new Singleton();
+
+//$a->printme();
+//$b->printme();
+//$b->printme();
+//$d = new Singleton();
+//$d->printme();
+
+//$db = new MySql($config);
+//echo $db->serverInfo();

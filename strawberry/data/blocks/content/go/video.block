@@ -1,0 +1,121 @@
+<h1>Видео</h1>
+<div style="padding:15px; cursor:pointer; line-height:18px; border:1px solid #CCC;">
+	<h3 style="font:400 22px/41px 'Roboto Condensed', sans-serif;">НОВОСТИ мелким ОПТОМ</h3>
+	<ul id="rotator"></ul>
+</div>
+<hr />
+
+<div id="player" class="player" style="width:640px;height:360px;"></div>
+<hr/>
+
+<script type="text/javascript">
+$(document).observe("dom:loaded", function() {
+	Informer();
+});
+
+	
+function Informer()
+{
+	var time = 3000;
+	var text = new Array();	
+	var file = '/ajax/json.php';
+	var ajax = getXmlHttp();
+
+	ajax.responseType = 'json';
+	ajax.open('GET', file, true);
+	ajax.onload = function()
+	{
+		if (this.status == 200)
+		{
+			var json = this.response;
+
+			for (var i in json) {
+				text[i] = '<li>' +stripslashes(json[i].title)+ '</li>';
+			}
+
+			var which = Math.round(Math.random()*(text.length - 1));
+			$('rotator').update(text[which]);
+			setTimeout(this.onload.bind(this), time);
+		} 
+	};
+
+	ajax.error  = function()
+	{}
+	ajax.send();
+}
+	
+function __Informer()
+{
+    var file = '/ajax/json.php';
+	var data = new Array();
+	var ajax = getXmlHttp();
+
+	ajax.responseType = 'json';
+	ajax.open("GET", file, true);
+	ajax.onload  = function(e) {
+		if (this.status == 200)
+		{
+			var json = this.response;
+            jsonParse(json);
+		} 
+	};
+
+	ajax.send();
+}
+
+
+function jsonParse(j)
+{
+    var i;
+	var out = new Array();
+
+    for (i = 0; i < j.length; i++) {
+		out[i] = '<li>' +j[i].username+ '</li>';
+	}
+
+    var which = Math.round(Math.random()*(out.length - 1));
+
+	setTimeout(function(which) {
+		$('rotator').update(out[which]);
+	}, 1000);
+}
+
+
+function stripslashes (str) {
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Ates Goral (http://magnetiq.com)
+  // +      fixed by: Mick@el
+  // +   improved by: marrtins
+  // +   bugfixed by: Onno Marsman
+  // +   improved by: rezna
+  // +   input by: Rick Waldron
+  // +   reimplemented by: Brett Zamir (http://brett-zamir.me)
+  // +   input by: Brant Messenger (http://www.brantmessenger.com/)
+  // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
+  // *     example 1: stripslashes('Kevin\'s code');
+  // *     returns 1: "Kevin's code"
+  // *     example 2: stripslashes('Kevin\\\'s code');
+  // *     returns 2: "Kevin\'s code"
+  return (str + '').replace(/\\(.?)/g, function (s, n1) {
+    switch (n1) {
+    case '\\':
+      return '\\';
+    case '0':
+      return '\u0000';
+    case '':
+      return '';
+    default:
+      return n1;
+    }
+  });
+}
+	
+/*var playervars = {
+	m:'video', 
+	uid:'player',
+	file: 'https://youtu.be/1sIJCOrPWy8', 
+	poster: '/uploads/thumb.php?src=uploads/posts/slide1-n.jpg&w=640&h=360',
+	comment: 'Нарезка из фильма "Дети славы"'		 
+};
+this.player = new Uppod(playervars);*/
+</script>

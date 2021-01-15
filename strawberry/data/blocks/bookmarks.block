@@ -1,0 +1,9 @@
+<!-- выводим закладки -->
+<b>Закладки</b>
+<ul>
+<?
+$static['bookmarks'] = true;
+$static['template']  = 'Headlines';
+include rootpath.'/show_news.php';
+?>
+</ul>

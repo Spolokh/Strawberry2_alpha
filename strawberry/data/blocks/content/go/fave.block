@@ -1,0 +1,39 @@
+<?php
+
+$offset = isset($offset) ? (int) $offset : 0;
+$number = isset($number) ? (int) $number : 10;
+$select = '`date`, `author`, `title`, `id`, `image`, `category`, `url`, `type`';
+
+$query = "SELECT $select FROM `".PREFIX."news`  
+			WHERE `type` = 'blog' 
+			ORDER BY `date` DESC 
+			LIMIT $offset, $number
+		";
+
+if (!$query = $sql->query($query)){
+    return $cute->msg('Ошибка', t('У вас нет выбранных постов!'));
+}
+
+foreach ($query as $k => $row) {
+	$tpl['row'][$k]['id']    = $row['id'];
+	$tpl['row'][$k]['link']  = cute_get_link($row);
+    $tpl['row'][$k]['date']  = langdate("d.m.Y", $row['date']);
+    $tpl['row'][$k]['title'] = replace_news('show', $row['title']);
+}
+
+$body = <<<BODY
+<ul>
+{{ BEGIN row }}
+    <li>
+        <a href="{{ link }}">
+            {{ title }} <i>{{date}}</i>
+        </a>
+    </li>
+{{ END row }}
+</ul>
+BODY;
+
+use classes\Blitz;
+$view = new Blitz;
+$view->load($body);
+$view->display($tpl);

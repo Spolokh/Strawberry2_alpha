@@ -1,0 +1,25 @@
+<ul title="Меню">
+ <?//=cn_menu('', '<li id="{url}"><a href="[php]cute_get_link($row)[/php]">{title}</a></li>'); ?>
+</ul>
+
+<?=plugin_enabled('baners.php') ? baners_make_design('right_banner') : ''; ?>
+ 
+<div id="category_get_tree">
+    <!--h3>Теги</h3-->
+    <menu>
+<?php
+//echo cn_keywords('<li><a href="[php]cute_get_link($row, keywords)[/php]">{name}</a></li>');
+//echo category_get_tree('', '<li style="margin-left:[php]{level}*10[/php]px;"><a href="[php]cute_get_link($row, category)[/php]">{name}</a></li>'."\n");
+?>
+	 </menu>
+</div> 
+ 
+<hr />
+<div id="archives">
+     <h3>Archives</h3>
+     <menu><?=cn_calendar();?></menu>
+</div> 
+
+<?php
+//echo cn_keywords('<a href="[php]cute_get_link($row, keywords)[/php]">{name} ([php]count_keywords_entry({id})[/php])</a><br />');
+?>

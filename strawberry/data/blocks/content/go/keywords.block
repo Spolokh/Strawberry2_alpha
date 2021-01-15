@@ -1,0 +1,2 @@
+<!-- вывод основного контента -->
+<?=cn_keywords('<li><a href="[php]cute_get_link($row, keywords)[/php]">{name}</a></li>')?>

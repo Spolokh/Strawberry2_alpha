@@ -1,0 +1,57 @@
+﻿<ul>
+	<li>
+		<ul>
+			<li><a href="<?=$config['home_page']; ?>">&copy;  <?=$config['home_title']; ?></a>  2009 г.</li>
+			<li><a href="http://goodgirl.ru/" target="_blank">&copy; 2006 GoodGirl</a></li>
+			<li>e-mail: <a href="/mail"><?=$config['site_mail'] ?></a></li>
+			<li>Тел/Факс: <?= $config['site_phone'] ?></li> 
+		</ul>
+	</li>
+	<li>
+		<ul>       
+			<li><a href="/"><?= t('На главную'); ?></a></li>
+			<li><a href="/search"><?= t('Поиск'); ?></a></li>
+			<li><a href="/mail"><?=t('Контакты'); ?></a></li>
+			<li><a href="#" onclick="new Effect.ScrollTo('Container'); return false;"><?=t('Наверх'); ?></a>
+		</ul>
+	</li>
+	<li>
+		<ul>       
+			<li> </li>
+			<li><?//=t('Запросов к базе данных: ' .$sql->queryCount())?></li>
+		</ul>
+	</li>
+</ul>
+
+<div class="copyright" style="background:#222; width:100%; text-align: center;  padding:15px; clear:both;">
+   <ul>
+	 ©<?=$config['home_title']; ?> 2009 г. 
+		<?php if ( isset($member['usergroup']) and $member['usergroup']< 3 ) { ?>
+	   		<?=t('Страница сгенерирована за ' .CN::stop(). ' сек.'); ?>
+		<?php } ?>
+   </ul>
+</div>
+
+<a id="nachKopf">
+	<i class="icon icon-arrow-up"></i>
+	<p><?=t('Наверх'); ?></p>
+</a>
+
+<!-- Modal role="dialog" hide -->	
+<div id="myModal" class="modal fade" role="dialog" aria-hidden="true">
+	<div class="modal-dialog">
+		<!-- Modal content-->
+		<div class="modal-content">
+		<div class="modal-header">
+			<a class="close" data-dismiss="modal" aria-hidden="true">×</a>
+			<h3 id="myModalHeader">Modal header</h3>
+		</div>
+		<div class="modal-body"></div>
+		<div class="modal-footer">
+			<span id="resultModal" style="left:0; float:left; padding:9px 1px; position:relative;"></span>
+			<button type="submit" id="sendModalData" form="orderForm">Отправить</button>
+			<button type="reset" data-dismiss="modal" aria-hidden="true">Закрыть</button>
+		</div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,17 @@
+<?php
+
+switch($REQUEST_URI)
+{ 
+	case '/do/form' :
+		echo (new ModalForm($config))->run();
+	break;
+		
+	case '/do/main' :
+		echo (new Main($config))->show();
+ 	break;
+		
+	default : 
+		header('HTTP/1.1 404 Not Found');
+        exit;
+	break;
+}
