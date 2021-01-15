@@ -111,21 +111,21 @@ if (substr($HTTP_REFERER, -1) == DS) {
 
 if (isset($username))
 {
-    $username = $_COOKIE[$config['cookie_prefix'].'username'] ? : $username;
-    $password = $_COOKIE[$config['cookie_prefix'].'password'] ? : md5x($password);
+	$username = $_COOKIE[$config['cookie_prefix'].'username'] ? : $username;
+	$password = $_COOKIE[$config['cookie_prefix'].'password'] ? : md5x($password);
 	
 	if ($sql->login($username, $password))
 	{
 		cute_setcookie('lastname', $username, (time + 1012324305),  '/');
-        cute_setcookie('username', $username, (time + 3600 * 24 * 365), '/');
+		cute_setcookie('username', $username, (time + 3600 * 24 * 365), '/');
 		cute_setcookie('password', $password, (time + 3600 * 24 * 365), '/');
 		$is_logged_in = true;
 
 	} else {
 		$result = '<font color="red">'.t('Неправильное имя пользователя или пароль!').'</font>';
-        $is_logged_in = false;
-        cute_setcookie('username', '', (time - 3600 * 24 * 365), '/');
-        cute_setcookie('password', '', (time - 3600 * 24 * 365), '/');
+		$is_logged_in = false;
+		cute_setcookie('username', '', (time - 3600 * 24 * 365), '/');
+		cute_setcookie('password', '', (time - 3600 * 24 * 365), '/');
 	}
 }
 
