@@ -30,14 +30,14 @@ foreach ($timezone_identifiers as $v){
 }
 
 
-$config['database']		= strtolower($_POST['database']);
-$config['language']		= $_POST['lang'];
-$config['charset'] 		= $_POST['charset'];
-$config['dbname']       = $_POST['dbname'];
-$config['dbuser']       = $_POST['dbuser'];
-$config['dbpassword']   = $_POST['dbpassword'];
-$config['dbprefix']     = $_POST['dbprefix'];
-$config['dbserver']     = $_POST['dbserver'];
+$config['database']= strtolower($_POST['database']);
+$config['language']= $_POST['lang'];
+$config['charset'] = $_POST['charset'];
+$config['dbname']  = $_POST['dbname'];
+$config['dbuser']  = $_POST['dbuser'];
+$config['dbpass']  = $_POST['dbpass'];
+$config['prefix']  = $_POST['prefix'];
+$config['dbhost']  = $_POST['dbhost'];
 $config['timestamp_zone'] = $_POST['timezone'];
 
 $step = isset($_GET['step']) ? $_GET['step'] : 1;
@@ -142,9 +142,9 @@ echoheader('options', t('Инсталяция Strawberry'));
 	'database' => $config['database'],
 	'dbname'   => $config['dbname'],
 	'dbuser'   => $config['dbuser'],
-	'dbpassword' => $config['dbpassword'],
-	'dbprefix' => $config['dbprefix'],
-	'dbserver' => $config['dbserver'],
+	'dbpass' => $config['dbpass'],
+	'prefix' => $config['prefix'],
+	'dbhost' => $config['dbhost'],
 	'date_adjust' => '0',
 	'mod_rewrite' => '1',
 	'pages_section' => '3',
