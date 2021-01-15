@@ -17,7 +17,7 @@ if ( !reset($query) ) {
 	return false; // code...
 }
 
-$dom = new DOMDocument ("1.0", $config['charset']);
+$dom = new DOMDocument ('1.0', $config['charset']);
 $dom ->formatOutput = true; //под вопросом
 
 $set = $dom->createElement ('urlset');
@@ -44,7 +44,7 @@ foreach ($query as $row) {
 
 	$loc = $dom->createElement('loc', cute_get_link($row));
 	$req = $dom->createElement('changefreq', 'daily'); 
-	$mod = $dom->createElement('lastmod', langdate("Y-m-d", $row['date'])); 
+	$mod = $dom->createElement('lastmod', langdate('Y-m-d', $row['date'])); 
 	$pri = $dom->createElement('priority', '0.8');
 
 	$url ->appendChild ($loc);
