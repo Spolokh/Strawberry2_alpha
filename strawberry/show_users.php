@@ -8,8 +8,8 @@ include_once 'head.php';
 
 //$number = isset($number) ? (int) $number : ($config['users_number'] ? $config['users_number'] : 21);
 
-$number = 10;
-$offset = !empty($_GET['skip']) ? (($_GET['skip']-1) * $number) : 0;
+$number = $number ?? $config['users_number'];
+$offset = !empty($_GET['skip']) ? (($_GET['skip'] - 1) * $number) : 0;
  
 
 $tpl['template']  = templates_directory.'/Users';
@@ -39,23 +39,16 @@ $count = $sql->count(['users', 'where' => $where]);
 foreach ($query as $row)
 {
 	if ($row['id'] == $user or $row['username'] == $user) {
-        $allow_full_story = true;
+        	$allow_full_story = true;
 	} 
-    else {
+    	else {
 		$allow_full_story = false;
 	}
 
 	if (isset($user) and !$allow_full_story) {
 		continue;
 	}
-	
-	/*if ( !$allow_full_story and $titleheader == $user ){
-        $tpl['user']['title'] = $titleheader = cn_title (' &raquo; ', false, 'Главная');
-    } else {
-        $tpl['user']['title'] = '';
-    }*/
 
-	//if (!$output = $cache->get($row['id'], '', ($allow_full_story ? 'show' : 'list'))){
 	if (!$rufus_file){
 		$rufus_file = parse_ini_file(rufus_file, true);
 	}
@@ -65,7 +58,8 @@ foreach ($query as $row)
 			foreach ($type_v as $k => $v){
 				if ($type_k == 'home'){
 					$tpl['user']['link'][$k] = cute_get_link($row, $k);
-				}   $tpl['user']['link'][$type_k.'/'.$k] = cute_get_link($row, $k, $type_k);
+				}   
+				$tpl['user']['link'][$type_k.'/'.$k] = cute_get_link($row, $k, $type_k);
 			}
 		}
 	}
@@ -75,11 +69,6 @@ foreach ($query as $row)
 		
 	$avatar = $config['path_userpic_upload'].'/'.$row['username'].'.'.$row['avatar'] ;
 		
-		
-	/*if ( $row['contacts'] = explode('|', $row['contacts']) ) {	
-		list ($location, $skype, $phone, $homepage) = $row['contacts'];
-	}*/
-	    
 	$tpl['user']['homepage'] = $homepage ?: '';
 	$tpl['user']['location'] = $location ?: '<i>Город не указан</i>';
 		
@@ -109,6 +98,3 @@ foreach ($query as $row)
 	$output = replace_news('show', $output);
 	echo $output;       
 }    
-?>
-
- 
