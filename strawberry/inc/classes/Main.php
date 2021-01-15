@@ -57,18 +57,14 @@ final class Main extends CuteParser
 
 	private function sql()
 	{
-		$number = self::NUMBER;
-		$offset = self::OFFSET;
-
 		$query = "(SELECT $this->fields FROM `" .PREFIX. "news` JOIN `" .PREFIX. "story` USING(`id`)
-				WHERE category = 2 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT $offset, $number)
+				WHERE category = 2 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT self::OFFSET, self::NUMBER)
 			UNION (SELECT $this->fields FROM `" .PREFIX. "news` JOIN `" .PREFIX. "story` USING(`id`)
-				WHERE category = 3 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT $offset, $number)
+				WHERE category = 3 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT self::OFFSET, self::NUMBER)
 			UNION (SELECT $this->fields FROM `" .PREFIX. "news` JOIN `" .PREFIX. "story` USING(`id`)
-				WHERE category = 5 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT $offset, $number)
+				WHERE category = 5 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT self::OFFSET, self::NUMBER)
 			UNION (SELECT $this->fields FROM `" .PREFIX. "news` JOIN `" .PREFIX. "story` USING(`id`)
-				WHERE category = 6 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT $offset, $number)
-		";
+				WHERE category = 6 AND hidden = 0 AND date <= ".time." ORDER BY 1 DESC LIMIT self::OFFSET, self::NUMBER)";
 
 		$query = $this->query($query);
 		return reset($query) ? $query : false;
@@ -78,6 +74,5 @@ final class Main extends CuteParser
 	{
 		$view = themes_directory.'/test.tpl';
 		return (new Blitz($view))->parse($this->tpl);
-		//$view = new Blitz($view); return $view->parse($this->tpl);
 	}
 }
