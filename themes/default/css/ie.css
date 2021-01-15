@@ -1,0 +1,34 @@
+fieldset
+	{behavior:url('/js/PIE.htc');}
+	  
+* html #Container 
+	{height:100%; behavior:url('/js/PIE.htc');}
+
+#showModalwin #authTable 
+	{behavior: url('/js/PIE.htc');}
+
+
+.post figure img 
+	{
+	margin:0;
+	height:90px;
+	width:90px;
+	position:relative;
+	behavior: url('/js/PIE.htc');
+	}
+	
+	
+* html #accordion
+      {border-bottom: 0;}
+* html #accordion li
+      {padding: 5px; border-bottom: 1px solid #CCC;  font: bold 12px Arial;}
+* html #accordion li li
+      {padding: 0; border-bottom: 0;}
+* html #accordion li.active a
+      {color: red;}
+* html #accordion li.active ul a
+      {color: blue;}
+* html .calendar .arrows ins.l		
+      {left: 19px;}
+* html .calendar .arrows ins.r		
+      {right: 0px;}

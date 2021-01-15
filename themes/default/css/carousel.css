@@ -1,0 +1,77 @@
+
+
+/* Horizontal Carousel */
+#carousel  /*-moz-border-radius: 8px; -webkit-border-radius: 8px; border-radius: 8px; behavior: url(http://test.ru/js/PIE.htc)*/
+	{
+	float:left; 
+	width:640px; 
+	height:90px; 
+	position:relative;
+	background:#f7f7f7
+	}    
+	
+#carousel .container 
+	{top:5px; left:32px; width:570px; height:90px; overflow:hidden; position:absolute;}            
+#carousel .previous_button  /*height:50px; background:url(images/c_prev.gif) -5px 10px no-repeat*/
+	{
+	top:0; left:0; 
+	width:35px; 
+	padding:35px 0; 
+	color:white; 
+	z-index:100; 
+	cursor:pointer; 
+	position:absolute; 
+	text-align:center; 
+	/*background: #f7f7f7;*/ 
+	font:bold 15px 'WebSymbolsRegular', Arial, sans-serif;
+	}
+#carousel .previous_button_disabled 
+	{
+	color:gray; 
+	cursor:default;}
+#carousel .next_button  /*height:50px;*/ 
+	{top:0; right:0; 
+	width:35px; 
+	padding:35px 0; 
+	color:white; 
+	z-index:100; 
+	cursor:pointer; 
+	position:absolute; 
+	text-align:center; 
+	/*background:black; */
+	font:bold 15px 'WebSymbolsRegular', Arial, sans-serif;
+	}   
+#carousel .next_button_disabled
+	{color:gray; cursor:default;}
+#carousel ul 
+	{
+		top:0; 
+		left:0; 
+		height:90px; 
+		width:100000px; 
+		position:relative
+	}                      
+#carousel ul li 
+	{float:left; color:white; padding:10px;}
+#carousel ul li a 
+	{z-index:1; width:120px; height:80px; color:white; opacity:0.75; display:block; overflow:hidden; position:relative; border:1px solid #999;} 
+#carousel ul li a:hover
+	{opacity:1; z-index:10; overflow:visible;}		
+#carousel ul li img 
+	{
+		top:-5px; 
+		left:-5px; 
+		float:left; 
+		width:120px; 
+		height:80px; 
+		position:absolute;
+	}                                                               
+#carousel ul li a:hover img
+	{
+		z-index:10; 
+		border:1px solid white
+	}
+
+	/*
+	https://www.facebook.com/photo.php?fbid=2080035878720751&set=a.911740148883669&type=3&theater
+	*/
