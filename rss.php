@@ -34,7 +34,7 @@ xmlns:dc="http://purl.org/dc/elements/1.1/">
 <description><?=$config['description']; ?></description>
 <?php } ?>
 
-<language><?=$config['lang']; ?></language>
+<language><?=$config['language']; ?></language>
 <generator><?=$config['version_name'].' '.$config['version_id']; ?></generator>
 
 <?php
