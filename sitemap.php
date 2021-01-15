@@ -4,7 +4,7 @@
  * @access private
  */
 
-include_once "strawberry/head.php";
+include_once 'strawberry/head.php';
 
 header('Content-type: text/xml');
 
