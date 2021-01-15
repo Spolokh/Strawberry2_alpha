@@ -8,6 +8,15 @@ include_once "strawberry/head.php";
 
 header('Content-type: text/xml');
 
+$query = $sql->select(['news', 
+	'select' => ['id', 'url', 'date', 'author', 'category', 'type'], 
+	'where'  => ['type != php', 'and', 'type != poll', 'and', 'type != page', 'and', 'hidden != 1']
+]);
+
+if ( !reset($query) ) {
+	return false; // code...
+}
+
 $dom = new DOMDocument ("1.0", $config['charset']);
 $dom ->formatOutput = true; //под вопросом
 
@@ -27,15 +36,6 @@ $url ->appendChild($loc);
 $url ->appendChild($mod);
 $url ->appendChild($req);
 $url ->appendChild($pri);
-
-$query = $sql->select(['news', 
-	'select' => ['id', 'url', 'date', 'author', 'category', 'type'], 
-	'where'  => ['type != php', 'and', 'type != poll', 'and', 'type != page', 'and', 'hidden != 1']
-]);
-
-if ( !reset($query) ) {
-	return false; // code...
-}
 
 foreach ($query as $row) { 
 		
